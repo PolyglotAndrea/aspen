@@ -1,0 +1,62 @@
+// Color variables
+$aspen-black: #000000;
+$aspen-white: #ffffff;
+$aspen-gray: #1a1a1a;
+$aspen-gray-light: #2a2a2a;
+$aspen-text: #ffffff;
+$aspen-text-muted: rgba(255, 255, 255, 0.6);
+$aspen-accent: #4a9c6d;
+
+// Typography
+$font-size-xs: 20rpx;
+$font-size-sm: 24rpx;
+$font-size-base: 28rpx;
+$font-size-lg: 32rpx;
+$font-size-xl: 40rpx;
+$font-size-xxl: 52rpx;
+
+// Spacing
+$spacing-xs: 10rpx;
+$spacing-sm: 20rpx;
+$spacing-base: 30rpx;
+$spacing-lg: 40rpx;
+$spacing-xl: 60rpx;
+
+// Border radius
+$radius-sm: 8rpx;
+$radius-base: 16rpx;
+$radius-lg: 24rpx;
+$radius-full: 9999rpx;
+
+// Flex helpers
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// Text ellipsis
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-ellipsis-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,200 @@
+{
+  "name": "Aspen Theme",
+  "version": "1.0.0",
+  "description": "Aspen 主题配置文件 - 一键换肤",
+  "themes": {
+    "aspen": {
+      "displayName": "白杨绿 (Aspen)",
+      "description": "白杨树品牌默认主题 - 绿色系",
+      "colors": {
+        "primary": "#4a9c6d",
+        "primaryLight": "#6bbd8a",
+        "primaryDark": "#2d5a3d",
+        "accent": "#4a9c6d",
+        "background": "#000000",
+        "surface": "rgba(255, 255, 255, 0.05)",
+        "surfaceGlass": "rgba(255, 255, 255, 0.08)",
+        "text": "#ffffff",
+        "textMuted": "rgba(255, 255, 255, 0.6)",
+        "textSecondary": "rgba(255, 255, 255, 0.4)",
+        "border": "rgba(255, 255, 255, 0.1)",
+        "success": "#4ade80",
+        "warning": "#fbbf24",
+        "error": "#f87171",
+        "info": "#60a5fa"
+      },
+      "typography": {
+        "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "fontSizeXs": "20rpx",
+        "fontSizeSm": "24rpx",
+        "fontSizeBase": "28rpx",
+        "fontSizeLg": "32rpx",
+        "fontSizeXl": "40rpx",
+        "fontSizeXxl": "52rpx",
+        "letterSpacing": "2rpx"
+      },
+      "spacing": {
+        "xs": "10rpx",
+        "sm": "20rpx",
+        "base": "30rpx",
+        "lg": "40rpx",
+        "xl": "60rpx"
+      },
+      "borderRadius": {
+        "sm": "8rpx",
+        "base": "16rpx",
+        "lg": "24rpx",
+        "full": "9999rpx"
+      },
+      "effects": {
+        "blur": "20rpx",
+        "shadow": "0 8rpx 32rpx rgba(0, 0, 0, 0.3)"
+      }
+    },
+    "volcano": {
+      "displayName": "火山红 (Volcano)",
+      "description": "激情火山主题 - 红色系",
+      "colors": {
+        "primary": "#dc2626",
+        "primaryLight": "#ef4444",
+        "primaryDark": "#991b1b",
+        "accent": "#f97316",
+        "background": "#0a0a0a",
+        "surface": "rgba(255, 255, 255, 0.05)",
+        "surfaceGlass": "rgba(255, 255, 255, 0.08)",
+        "text": "#ffffff",
+        "textMuted": "rgba(255, 255, 255, 0.6)",
+        "textSecondary": "rgba(255, 255, 255, 0.4)",
+        "border": "rgba(255, 255, 255, 0.1)",
+        "success": "#4ade80",
+        "warning": "#fbbf24",
+        "error": "#f87171",
+        "info": "#60a5fa"
+      },
+      "typography": {
+        "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "fontSizeXs": "20rpx",
+        "fontSizeSm": "24rpx",
+        "fontSizeBase": "28rpx",
+        "fontSizeLg": "32rpx",
+        "fontSizeXl": "40rpx",
+        "fontSizeXxl": "52rpx",
+        "letterSpacing": "2rpx"
+      },
+      "spacing": {
+        "xs": "10rpx",
+        "sm": "20rpx",
+        "base": "30rpx",
+        "lg": "40rpx",
+        "xl": "60rpx"
+      },
+      "borderRadius": {
+        "sm": "8rpx",
+        "base": "16rpx",
+        "lg": "24rpx",
+        "full": "9999rpx"
+      },
+      "effects": {
+        "blur": "20rpx",
+        "shadow": "0 8rpx 32rpx rgba(220, 38, 38, 0.2)"
+      }
+    },
+    "ocean": {
+      "displayName": "深海蓝 (Ocean)",
+      "description": "宁静深海主题 - 蓝色系",
+      "colors": {
+        "primary": "#0ea5e9",
+        "primaryLight": "#38bdf8",
+        "primaryDark": "#0369a1",
+        "accent": "#06b6d4",
+        "background": "#0c1929",
+        "surface": "rgba(255, 255, 255, 0.05)",
+        "surfaceGlass": "rgba(255, 255, 255, 0.08)",
+        "text": "#ffffff",
+        "textMuted": "rgba(255, 255, 255, 0.6)",
+        "textSecondary": "rgba(255, 255, 255, 0.4)",
+        "border": "rgba(255, 255, 255, 0.1)",
+        "success": "#4ade80",
+        "warning": "#fbbf24",
+        "error": "#f87171",
+        "info": "#60a5fa"
+      },
+      "typography": {
+        "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "fontSizeXs": "20rpx",
+        "fontSizeSm": "24rpx",
+        "fontSizeBase": "28rpx",
+        "fontSizeLg": "32rpx",
+        "fontSizeXl": "40rpx",
+        "fontSizeXxl": "52rpx",
+        "letterSpacing": "2rpx"
+      },
+      "spacing": {
+        "xs": "10rpx",
+        "sm": "20rpx",
+        "base": "30rpx",
+        "lg": "40rpx",
+        "xl": "60rpx"
+      },
+      "borderRadius": {
+        "sm": "8rpx",
+        "base": "16rpx",
+        "lg": "24rpx",
+        "full": "9999rpx"
+      },
+      "effects": {
+        "blur": "20rpx",
+        "shadow": "0 8rpx 32rpx rgba(14, 165, 233, 0.2)"
+      }
+    },
+    "gold": {
+      "displayName": "金阁 (Gold)",
+      "description": "高端金阁主题 - 金色系",
+      "colors": {
+        "primary": "#d4a853",
+        "primaryLight": "#e8c97a",
+        "primaryDark": "#b8860b",
+        "accent": "#ffd700",
+        "background": "#0d0b06",
+        "surface": "rgba(255, 255, 255, 0.05)",
+        "surfaceGlass": "rgba(255, 255, 255, 0.08)",
+        "text": "#ffffff",
+        "textMuted": "rgba(255, 255, 255, 0.6)",
+        "textSecondary": "rgba(255, 255, 255, 0.4)",
+        "border": "rgba(255, 255, 255, 0.1)",
+        "success": "#4ade80",
+        "warning": "#fbbf24",
+        "error": "#f87171",
+        "info": "#60a5fa"
+      },
+      "typography": {
+        "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        "fontSizeXs": "20rpx",
+        "fontSizeSm": "24rpx",
+        "fontSizeBase": "28rpx",
+        "fontSizeLg": "32rpx",
+        "fontSizeXl": "40rpx",
+        "fontSizeXxl": "52rpx",
+        "letterSpacing": "2rpx"
+      },
+      "spacing": {
+        "xs": "10rpx",
+        "sm": "20rpx",
+        "base": "30rpx",
+        "lg": "40rpx",
+        "xl": "60rpx"
+      },
+      "borderRadius": {
+        "sm": "8rpx",
+        "base": "16rpx",
+        "lg": "24rpx",
+        "full": "9999rpx"
+      },
+      "effects": {
+        "blur": "20rpx",
+        "shadow": "0 8rpx 32rpx rgba(212, 168, 83, 0.2)"
+      }
+    }
+  },
+  "defaultTheme": "aspen"
+}
