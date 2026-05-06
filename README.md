@@ -1,154 +1,154 @@
-# Aspen - 多租户餐饮管理平台
+# Aspen - Multi-Tenant Restaurant Management Platform
 
-Aspen 是一个全栈多租户餐饮品牌管理平台，支持预订系统、会员管理、外卖配送、周边商品、统一订单、支付集成（微信/支付宝/银联）及多级分账。
+Aspen is a full-stack multi-tenant restaurant brand management platform featuring booking, member management, delivery, merchandise, unified orders, payment integration (WeChat Pay / Alipay / UnionPay), and multi-level profit sharing.
 
-## 项目结构
+## Project Structure
 
 ```
 aspen/
-├── aspen-api/          # 后端 API (Bun + ElysiaJS)
-├── aspen-mp/           # 小程序/H5 前端 (uni-app + Vue 3)
-├── aspen-admin/        # 管理后台 (React + Vite + Tailwind)
+├── aspen-api/          # Backend API (Bun + ElysiaJS)
+├── aspen-mp/           # Mini Program / H5 Frontend (uni-app + Vue 3)
+├── aspen-admin/        # Admin Dashboard (React + Vite + Tailwind)
 └── docker-compose.yml  # PostgreSQL + Redis
 ```
 
-## 技术栈
+## Tech Stack
 
-| 层级 | 技术 |
-|------|------|
-| 后端框架 | Bun + ElysiaJS |
-| 数据库 | PostgreSQL + Drizzle ORM |
-| 认证 | JWT (jose) + bcryptjs |
-| 小程序 | uni-app (Vue 3) + Pinia |
-| 管理后台 | React 18 + Vite + Ant Design + Tailwind CSS |
-| 支付 | 微信支付 v3 / 支付宝 OpenAPI v3 / 银联 |
+| Layer | Technology |
+|-------|-----------|
+| Backend | Bun + ElysiaJS |
+| Database | PostgreSQL + Drizzle ORM |
+| Auth | JWT (jose) + bcryptjs |
+| Mini Program | uni-app (Vue 3) + Pinia |
+| Admin Dashboard | React 18 + Vite + Ant Design + Tailwind CSS |
+| Payment | WeChat Pay v3 / Alipay OpenAPI v3 / UnionPay |
 
-## 快速开始
+## Quick Start
 
-### 前置要求
+### Prerequisites
 
 - [Bun](https://bun.sh) >= 1.0
 - [Node.js](https://nodejs.org) >= 18
-- [Docker](https://docker.com) (用于 PostgreSQL)
+- [Docker](https://docker.com) (for PostgreSQL)
 
-### 1. 启动数据库
+### 1. Start Database
 
 ```bash
 docker compose up -d
 ```
 
-### 2. 后端 API
+### 2. Backend API
 
 ```bash
 cd aspen-api
-cp .env.example .env    # 或直接使用 .env
+cp .env.example .env
 bun install
-bun run db:push         # 推送 schema 到数据库
-bun run db:seed         # 种子数据
-bun run dev             # 启动开发服务器 (端口 3000)
+bun run db:push         # Push schema to database
+bun run db:seed         # Seed sample data
+bun run dev             # Start dev server (port 3000)
 ```
 
-Swagger 文档: http://localhost:3000/swagger
+Swagger docs: http://localhost:3000/swagger
 
-### 3. 小程序 / H5
+### 3. Mini Program / H5
 
 ```bash
 cd aspen-mp
 npm install
-npm run dev:h5          # H5 模式 (端口 5173)
+npm run dev:h5          # H5 mode (port 5173)
 ```
 
-### 4. 管理后台
+### 4. Admin Dashboard
 
 ```bash
 cd aspen-admin
 npm install
-npm run dev             # 开发服务器 (端口 5174)
+npm run dev             # Dev server (port 5174)
 ```
 
-### 一键启动
+### One-Click Start
 
 ```bash
-./start.sh all          # 启动 API + MP
-./start.sh stop         # 停止所有服务
-./start.sh status       # 查看运行状态
+./start.sh all          # Start API + MP
+./start.sh stop         # Stop all services
+./start.sh status       # Check running status
 ```
 
-## 核心功能
+## Core Features
 
-### 多租户系统
+### Multi-Tenant System
 
-通过 `x-tenant-id` HTTP header 实现行级租户隔离。内置 4 个示例租户：
+Row-level tenant isolation via `x-tenant-id` HTTP header. Four built-in demo tenants:
 
-| 租户 | 品牌 | 特点 |
-|------|------|------|
-| `aspen` | 白杨树 | 单门店，全功能 |
-| `volcano` | 火山 | 多门店，高级预订 |
-| `ocean` | 深海 | 简化版，无会员 |
-| `gold` | 金阁 | 高端餐饮，三级分账 |
+| Tenant | Brand | Description |
+|--------|-------|-------------|
+| `aspen` | Aspen | Single store, full features |
+| `volcano` | Volcano | Multi-store, advanced booking |
+| `ocean` | Ocean | Simplified, no member system |
+| `gold` | Gold Pavilion | Fine dining, 3-level profit sharing |
 
-### 预订系统
+### Booking System
 
-- 两种模式: RULES（纯时间预约）和 SEATING（选座 + 押金）
-- 多门店支持、桌位管理、可用时段查询
+- Two modes: RULES (time-only reservation) and SEATING (seat selection + deposit)
+- Multi-store support, table management, availability queries
 
-### 会员系统
+### Member System
 
-- 手机号自动注册、密码登录
-- 4 等级（青铜/白银/黄金/铂金）、积分体系
-- 签到、消费积分、积分抵扣
+- Auto-register on first phone login, password login
+- 4 tiers (Bronze / Silver / Gold / Platinum), points system
+- Daily check-in, purchase points, points redemption
 
-### 统一订单
+### Unified Orders
 
-- 支持预订/外卖/商品三种订单类型
-- 状态机: `pending → paid → confirmed → preparing → ready → delivering/completed`
-- 购物车、核销码、退款流程
+- Three order types: booking, delivery, product
+- State machine: `pending -> paid -> confirmed -> preparing -> ready -> delivering/completed`
+- Shopping cart, verification code, refund flow
 
-### 支付集成
+### Payment Integration
 
-- **微信支付 v3**: JSAPI（小程序）、RSA-SHA256-PSS 签名、AES-256-GCM 回调解密
-- **支付宝 OpenAPI v3**: WAP 支付、RSA2 签名、表单自动提交
-- **银联**: 证书签名、WAP 重定向、异步回调
-- **模拟模式**: 开发环境默认，所有操作即时成功
-- **多级分账**: 按订单灵活配置 N 级分账比例
+- **WeChat Pay v3**: JSAPI (Mini Program), RSA-SHA256-PSS signing, AES-256-GCM webhook decryption
+- **Alipay OpenAPI v3**: WAP payment, RSA2 signing, auto-submit form redirect
+- **UnionPay**: Certificate-based signing, WAP redirect, async callback
+- **Simulate mode**: Default for dev, all operations succeed instantly
+- **Multi-level profit sharing**: Flexible N-level split ratio per order
 
-### 外卖配送
+### Delivery
 
-- 菜单 CRUD、分类管理
-- 配送费计算（区域制 + 免配送门槛）
-- 配送时间窗口检查
+- Menu CRUD, category management
+- Delivery fee calculation (area-based + free delivery threshold)
+- Delivery time window checking
 
-### 周边商品
+### Merchandise
 
-- 商品 CRUD、分类管理
-- 库存管理、规格配置
+- Product CRUD, category management
+- Inventory management, spec configuration
 
-## API 路由
+## API Routes
 
-所有业务路由在 `/api/v1` 下。完整文档见 Swagger。
+All business routes are under `/api/v1`. Full documentation at Swagger.
 
 ```
-GET  /health                              # 健康检查
-GET  /api/v1/brand                        # 品牌信息
-GET  /api/v1/menu                         # 堂食菜单
-GET  /api/v1/bookings/config              # 预订配置
-GET  /api/v1/bookings/stores              # 门店列表
-GET  /api/v1/bookings/available-tables    # 可用桌位
-POST /api/v1/orders                       # 创建订单
-GET  /api/v1/orders                       # 订单列表
-GET  /api/v1/orders/cart                  # 购物车
-POST /api/v1/member/login/phone           # 手机登录
-GET  /api/v1/member/profile               # 会员信息
-GET  /api/v1/delivery/menu                # 外卖菜单
-GET  /api/v1/products                     # 周边商品
-POST /api/v1/payment/orders/:id/pay       # 创建支付
-POST /api/v1/payment/notify/wechat        # 微信回调
-POST /api/v1/payment/notify/alipay        # 支付宝回调
-POST /api/v1/payment/notify/unionpay      # 银联回调
-GET  /api/v1/admin/members                # 管理会员 (需 x-admin-key)
+GET  /health                              # Health check
+GET  /api/v1/brand                        # Brand info
+GET  /api/v1/menu                         # Dine-in menu
+GET  /api/v1/bookings/config              # Booking config
+GET  /api/v1/bookings/stores              # Store list
+GET  /api/v1/bookings/available-tables    # Available tables
+POST /api/v1/orders                       # Create order
+GET  /api/v1/orders                       # List orders
+GET  /api/v1/orders/cart                  # Shopping cart
+POST /api/v1/member/login/phone           # Phone login
+GET  /api/v1/member/profile               # Member profile
+GET  /api/v1/delivery/menu                # Delivery menu
+GET  /api/v1/products                     # Merchandise
+POST /api/v1/payment/orders/:id/pay       # Create payment
+POST /api/v1/payment/notify/wechat        # WeChat webhook
+POST /api/v1/payment/notify/alipay        # Alipay webhook
+POST /api/v1/payment/notify/unionpay      # UnionPay webhook
+GET  /api/v1/admin/members                # Manage members (requires x-admin-key)
 ```
 
-## 环境变量
+## Environment Variables
 
 ```bash
 # aspen-api/.env
@@ -161,11 +161,11 @@ PAYMENT_MODE=simulate          # simulate | sandbox | production
 ## Docker
 
 ```bash
-docker compose up -d           # 启动 PostgreSQL + Redis
-docker compose down            # 停止
-docker compose down -v         # 停止并删除数据
+docker compose up -d           # Start PostgreSQL + Redis
+docker compose down            # Stop containers
+docker compose down -v         # Stop and remove volumes
 ```
 
-## 许可证
+## License
 
 [MIT](LICENSE)
