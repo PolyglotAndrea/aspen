@@ -90,9 +90,6 @@ export const useAuthStore = defineStore('auth', {
       setItem: (key: string, value: string) => {
         try { uni.setStorageSync(key, value); } catch {}
       },
-      removeItem: (key: string) => {
-        try { uni.removeStorageSync(key); } catch {}
-      },
     },
   },
 });

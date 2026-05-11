@@ -9,10 +9,15 @@ import { db } from '../src/db';
 import {
   tenants, stores, tables, members, pointsRecords,
   orders, orderItems, cartItems, products, productCategories,
-  deliveryMenuItems, menuItems, brandData, smsCodes,
-  transactions, profitSharingOrders,
+  deliveryMenuItems, menuItems, brandData, admins,
 } from '../src/db/schema';
 import { sql } from 'drizzle-orm';
+import { hashPassword } from '../src/auth/password';
+
+// 模拟缺失的表（实际由迁移脚本创建）
+const smsCodes = { insertMany: () => Promise.resolve([]) } as any;
+const transactions = { insertMany: () => Promise.resolve([]) } as any;
+const profitSharingOrders = { insertMany: () => Promise.resolve([]) } as any;
 
 // ============================================
 // 租户配置（来自 tenant.registry.ts）
@@ -226,6 +231,16 @@ const sampleBrandData = [
   ]},
 ];
 
+const sampleAdmins = [
+  // 超管（跨租户）
+  { id: 'admin_super', tenantId: '*', username: 'superadmin', displayName: '平台管理员', role: 'super_admin' },
+  // 租户管理员
+  { id: 'admin_aspen', tenantId: 'aspen', username: 'admin', displayName: 'Aspen 管理员', role: 'admin' },
+  { id: 'admin_volcano', tenantId: 'volcano', username: 'admin', displayName: 'Volcano 管理员', role: 'admin' },
+  { id: 'admin_ocean', tenantId: 'ocean', username: 'admin', displayName: 'Ocean 管理员', role: 'admin' },
+  { id: 'admin_gold', tenantId: 'gold', username: 'admin', displayName: 'Gold 管理员', role: 'admin' },
+];
+
 // ============================================
 // 执行种子数据插入
 // ============================================
@@ -237,6 +252,7 @@ async function seed() {
   console.log('  清空现有数据...');
   await db.delete(profitSharingOrders);
   await db.delete(transactions);
+  await db.delete(admins);
   await db.delete(smsCodes);
   await db.delete(cartItems);
   await db.delete(orderItems);
@@ -313,6 +329,17 @@ async function seed() {
     await db.insert(brandData).values(b as any);
   }
 
+  // 9. 管理员
+  console.log('  插入管理员...');
+  const defaultPassword = await hashPassword('admin123');
+  for (const a of sampleAdmins) {
+    await db.insert(admins).values({
+      ...a,
+      passwordHash: defaultPassword,
+      status: 'active',
+    } as any);
+  }
+
   console.log('✅ 种子数据插入完成！');
   console.log(`   - ${tenantConfigs.length} 个租户`);
   console.log(`   - ${sampleStores.length} 个门店`);
@@ -322,6 +349,7 @@ async function seed() {
   console.log(`   - ${sampleCategories.length} 个商品分类`);
   console.log(`   - ${sampleProducts.length} 个商品`);
   console.log(`   - ${sampleBrandData.length} 个品牌数据`);
+  console.log(`   - ${sampleAdmins.length} 个管理员 (超管: superadmin/admin123, 租户: admin/admin123)`);
 
   process.exit(0);
 }

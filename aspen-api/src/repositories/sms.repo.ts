@@ -3,11 +3,12 @@ import { smsCodes } from '../db/schema';
 import { eq, and, gt, sql } from 'drizzle-orm';
 
 export const smsRepo = {
-  async create(data: { tenantId: string; phone: string; code: string; purpose?: string; expiresAt: Date }) {
+  async create(data: { tenantId: string; phone: string; code: string; type: string; purpose?: string; expiresAt: Date }) {
     const result = await db.insert(smsCodes).values({
       tenantId: data.tenantId,
       phone: data.phone,
       code: data.code,
+      type: data.type,
       purpose: data.purpose || 'login',
       expiresAt: data.expiresAt,
     }).returning();

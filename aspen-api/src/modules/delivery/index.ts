@@ -1,13 +1,14 @@
 /**
- * 外卖模块 (Delivery Module)
+ * 外卖模块 (Delivery Module) v2.0
  *
- * 支持外卖菜单、购物车、配送配置
+ * 支持外卖菜单(多规格/标签/富文本/销量)、配送配置、购物车
+ * 对齐市面主流外卖小程序标准模型
  */
 
 import { Elysia, t } from 'elysia';
-import type { DeliveryConfig, DeliveryArea, DeliveryFeeRule } from '../../config/tenant.types';
+import type { DeliveryConfig, DeliveryItem } from '../../config/tenant.types';
 import { getTenantConfig } from '../../config/tenant.registry';
-import { deliveryRepo } from '../../repositories/delivery.repo';
+import { deliveryRepo } from '../../repositories/product.repo';
 
 // ============================================
 // 外卖路由
@@ -87,7 +88,7 @@ export const deliveryRoutes = new Elysia({ prefix: '/delivery' })
     };
   })
 
-  // 获取外卖菜单
+  // 获取外卖菜单 (含推荐/热销/新品)
   .get('/menu', async ({ headers, query }) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
     const config = getTenantConfig(tenantId);
@@ -96,17 +97,15 @@ export const deliveryRoutes = new Elysia({ prefix: '/delivery' })
       throw new Error('外卖功能未启用');
     }
 
-    const params: { category?: string; available?: boolean } = {};
-    if (query.category) {
-      params.category = query.category;
-    }
-    if (query.available === 'true') {
-      params.available = true;
-    }
+    const params: { category?: string; available?: boolean; isRecommend?: boolean; isNew?: boolean } = {};
+    if (query.category) params.category = query.category as string;
+    if (query.available === 'true') params.available = true;
+    if (query.recommend === 'true') params.isRecommend = true;
+    if (query.new === 'true') params.isNew = true;
 
     const menu = await deliveryRepo.findByTenant(tenantId, params);
 
-    // 分类
+    // 分类统计
     const categories = [...new Set(menu.map(m => m.category))];
 
     return {
@@ -114,20 +113,52 @@ export const deliveryRoutes = new Elysia({ prefix: '/delivery' })
       items: menu.map(item => ({
         id: item.id,
         name: item.name,
+        subtitle: item.subtitle,
         description: item.description,
         price: item.price,
         originalPrice: item.originalPrice,
         image: item.image,
+        images: item.images,
         category: item.category,
         available: item.available,
         stock: item.stock,
         tags: item.tags,
         specs: item.specs,
+        isRecommend: item.isRecommend,
+        isNew: item.isNew,
+        soldCount: item.soldCount,
+        rating: item.rating,
       })),
     };
   })
 
-  // 获取菜单分类
+  // 推荐菜品
+  .get('/recommend', async ({ headers }) => {
+    const tenantId = headers['x-tenant-id'] || 'aspen';
+    const config = getTenantConfig(tenantId);
+
+    if (!config?.features.delivery) {
+      throw new Error('外卖功能未启用');
+    }
+
+    const menu = await deliveryRepo.findByTenant(tenantId, { isRecommend: true });
+
+    return {
+      items: menu.map(item => ({
+        id: item.id,
+        name: item.name,
+        subtitle: item.subtitle,
+        price: item.price,
+        originalPrice: item.originalPrice,
+        image: item.image,
+        tags: item.tags,
+        soldCount: item.soldCount,
+        rating: item.rating,
+      })),
+    };
+  })
+
+  // 获取菜单分类 (带菜品数)
   .get('/categories', async ({ headers }) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
     const config = getTenantConfig(tenantId);
@@ -156,7 +187,25 @@ export const deliveryRoutes = new Elysia({ prefix: '/delivery' })
       throw new Error('商品不存在');
     }
 
-    return item;
+    return {
+      id: item.id,
+      name: item.name,
+      subtitle: item.subtitle,
+      description: item.description,
+      price: item.price,
+      originalPrice: item.originalPrice,
+      image: item.image,
+      images: item.images,
+      category: item.category,
+      available: item.available,
+      stock: item.stock,
+      tags: item.tags,
+      specs: item.specs,
+      isRecommend: item.isRecommend,
+      isNew: item.isNew,
+      soldCount: item.soldCount,
+      rating: item.rating,
+    };
   })
 
   // 添加菜单项 (管理端)
@@ -168,7 +217,7 @@ export const deliveryRoutes = new Elysia({ prefix: '/delivery' })
       throw new Error('外卖功能未启用');
     }
 
-    const { name, description, price, originalPrice, image, category, stock, tags, specs } = body as any;
+    const { name, subtitle, description, price, originalPrice, image, images, category, stock, tags, specs, isRecommend, isNew } = body as any;
 
     if (!name || !price || !category) {
       throw new Error('缺少必要参数');
@@ -178,15 +227,21 @@ export const deliveryRoutes = new Elysia({ prefix: '/delivery' })
       id: `dm_${tenantId}_${Date.now()}`,
       tenantId,
       name,
+      subtitle,
       description,
       price,
       originalPrice,
       image,
+      images: images || [],
       category,
       available: true,
       stock: stock || 999,
-      tags,
-      specs,
+      tags: tags || [],
+      specs: specs || [],
+      isRecommend: isRecommend || false,
+      isNew: isNew || false,
+      soldCount: 0,
+      rating: 0,
       createdAt: new Date(),
     };
 
@@ -210,7 +265,7 @@ export const deliveryRoutes = new Elysia({ prefix: '/delivery' })
     }
 
     const updates = body as any;
-    const allowedFields = ['name', 'description', 'price', 'originalPrice', 'image', 'category', 'available', 'stock', 'tags', 'specs'];
+    const allowedFields = ['name', 'subtitle', 'description', 'price', 'originalPrice', 'image', 'images', 'category', 'available', 'stock', 'tags', 'specs', 'isRecommend', 'isNew'];
     const updateData: Record<string, any> = {};
 
     for (const field of allowedFields) {
@@ -272,34 +327,46 @@ export const deliveryRoutes = new Elysia({ prefix: '/delivery' })
       // 检查休息时间
       if (breakTime && currentTime >= breakTime.start && currentTime <= breakTime.end) {
         canOrder = false;
-        message = `配送休息中 ${breakTime.start} - ${breakTime.end}`;
+        message = `当前为休息时间 (${breakTime.start} - ${breakTime.end})`;
       }
 
-      // 计算预计送达时间
-      if (canOrder && estimatedMinutes) {
-        const deliveryTime = new Date(now.getTime() + estimatedMinutes * 60000);
-        estimatedDeliveryTime = `${deliveryTime.getHours().toString().padStart(2, '0')}:${deliveryTime.getMinutes().toString().padStart(2, '0')}`;
-      }
-
-      // 检查是否支持立即配送
-      if (timeConfig.instantDelivery === false) {
-        // 需要提前预约
-        const minAdvance = timeConfig.minAdvanceMinutes || 30;
-        const earliestTime = new Date(now.getTime() + minAdvance * 60000);
-        if (earliestTime.getHours() < parseInt(dayStartTime.split(':')[0])) {
-          canOrder = false;
-          message = `请提前 ${minAdvance} 分钟预约`;
+      if (canOrder) {
+        estimatedDeliveryTime = `${estimatedMinutes}分钟`;
+        if (currentTime < dayEndTime) {
+          const [endH, endM] = dayEndTime.split(':').map(Number);
+          const remainingMinutes = endH * 60 + endM - now.getHours() * 60 - now.getMinutes();
+          if (remainingMinutes < estimatedMinutes) {
+            canOrder = false;
+            message = `已超过最晚下单时间，还需${estimatedMinutes}分钟送达`;
+          }
         }
       }
     }
 
+    return { canOrder, message, estimatedDeliveryTime, currentTime };
+  })
+
+  // 销量排行
+  .get('/hot', async ({ headers, query }) => {
+    const tenantId = headers['x-tenant-id'] || 'aspen';
+    const limit = parseInt(query.limit as string) || 10;
+
+    const menu = await deliveryRepo.findByTenant(tenantId, { available: true });
+    const hotItems = menu
+      .sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0))
+      .slice(0, limit);
+
     return {
-      canOrder,
-      message,
-      currentTime,
-      estimatedDeliveryTime,
-      instantDelivery: timeConfig?.instantDelivery ?? true,
+      items: hotItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        subtitle: item.subtitle,
+        price: item.price,
+        originalPrice: item.originalPrice,
+        image: item.image,
+        tags: item.tags,
+        soldCount: item.soldCount,
+        rating: item.rating,
+      })),
     };
   });
-
-export default deliveryRoutes;

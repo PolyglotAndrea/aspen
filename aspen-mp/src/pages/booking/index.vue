@@ -152,31 +152,35 @@ const openBookingModal = () => {
 }
 
 .booking-header {
-  padding: 180rpx 40rpx 60rpx;
+  padding: 160rpx 40rpx 60rpx;
   text-align: center;
+  animation: fadeInDown 1s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .header-title {
   display: block;
-  font-size: var(--as-font-size-xl);
-  font-weight: 300;
+  font-size: 60rpx;
+  font-weight: 200;
   color: var(--as-text);
-  letter-spacing: 8rpx;
+  letter-spacing: 12rpx;
+  margin-right: -12rpx;
 }
 
 .header-subtitle {
   display: block;
-  margin-top: 10rpx;
-  font-size: var(--as-font-size-sm);
-  color: var(--as-text-secondary);
-  letter-spacing: 4rpx;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: var(--as-accent);
+  letter-spacing: 8rpx;
+  font-weight: 300;
 }
 
 .booking-intro {
   padding: 0 40rpx;
   display: flex;
   flex-direction: column;
-  gap: var(--as-spacing-base);
+  gap: var(--as-spacing-lg);
+  animation: fadeIn 1.2s ease 0.2s both;
 }
 
 .intro-card {
@@ -186,11 +190,12 @@ const openBookingModal = () => {
 .intro-content {
   display: flex;
   align-items: center;
-  gap: var(--as-spacing-base);
+  gap: var(--as-spacing-lg);
 }
 
 .intro-icon {
-  font-size: 48rpx;
+  font-size: 56rpx;
+  filter: drop-shadow(0 4rpx 8rpx rgba(0,0,0,0.3));
 }
 
 .intro-text {
@@ -199,50 +204,73 @@ const openBookingModal = () => {
 
 .intro-title {
   display: block;
-  font-size: var(--as-font-size-base);
+  font-size: var(--as-font-size-lg);
   color: var(--as-text);
-  font-weight: 500;
+  font-weight: 400;
+  letter-spacing: 2rpx;
 }
 
 .intro-desc {
   display: block;
   font-size: var(--as-font-size-sm);
-  color: var(--as-text-secondary);
-  margin-top: 4rpx;
+  color: var(--as-text-muted);
+  margin-top: 8rpx;
+  font-weight: 300;
 }
 
 .intro-arrow {
-  font-size: 40rpx;
-  color: var(--as-text-secondary);
+  font-size: 48rpx;
+  color: var(--as-accent);
+  font-weight: 200;
 }
 
 .hours-section {
-  padding: var(--as-spacing-lg) 40rpx 0;
+  padding: var(--as-spacing-xl) 40rpx 0;
+  animation: fadeIn 1.2s ease 0.4s both;
 }
 
 .section-title {
-  font-size: var(--as-font-size-base);
-  color: var(--as-text);
-  font-weight: 500;
+  font-size: var(--as-font-size-lg);
+  color: var(--as-accent);
+  font-weight: 400;
+  letter-spacing: 2rpx;
 }
 
 .hours-list {
-  margin-top: var(--as-spacing-xs);
+  margin-top: var(--as-spacing-sm);
 }
 
 .hours-item {
   display: flex;
   justify-content: space-between;
-  padding: var(--as-spacing-xs) 0;
+  padding: var(--as-spacing-sm) 0;
+  border-bottom: 1px solid var(--as-border-light);
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .hours-day {
-  font-size: var(--as-font-size-sm);
+  font-size: var(--as-font-size-base);
   color: var(--as-text-muted);
+  font-weight: 300;
 }
 
 .hours-time {
-  font-size: var(--as-font-size-sm);
+  font-size: var(--as-font-size-base);
   color: var(--as-text);
+  font-weight: 400;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-30rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>

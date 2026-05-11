@@ -6,6 +6,7 @@ declare module '*.vue' {
   export default component;
 }
 
-declare module '@dcloudio/uni-app' {
-  export * from '@dcloudio/uni-app';
+declare module '*.json' {
+  const value: Record<string, any>;
+  export default value;
 }

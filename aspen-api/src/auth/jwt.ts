@@ -12,10 +12,10 @@ const JWT_SECRET = new TextEncoder().encode(
 const TOKEN_EXPIRY = '7d';
 
 export interface JWTPayload {
-  sub: string;       // memberId
-  tenantId: string;
+  sub: string;       // memberId or adminId
+  tenantId: string;  // '*' for super_admin
   phone: string;
-  role: 'member' | 'admin';
+  role: 'member' | 'admin' | 'super_admin';
 }
 
 export async function signToken(payload: JWTPayload): Promise<string> {

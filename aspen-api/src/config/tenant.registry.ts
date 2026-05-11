@@ -7,6 +7,8 @@
 import type {
   TenantConfig,
   BookingFeatures,
+  MemberLevel,
+  MemberConfig,
 } from './tenant.types';
 import { tenantRepo } from '../repositories/tenant.repo';
 
@@ -105,9 +107,10 @@ export async function createTenant(config: Partial<TenantConfig> & { id: string 
     id: config.id,
     brandName: config.brandName || config.id,
     brandNameEn: config.brandNameEn || config.id.toUpperCase(),
-    dbConnection: config.dbConnection || '',
-    redisUrl: config.redisUrl || '',
+    dbConnection: config.dbConnection || undefined,
+    redisUrl: config.redisUrl,
     storageBucket: config.storageBucket || `${config.id}-cdn`,
+    tables: config.tables || { enabled: false, seatTypes: [] },
     theme: config.theme || {
       primary: '#4a9c6d', primaryLight: '#6bbd8a', primaryDark: '#2d5a3d',
       accent: '#4a9c6d', background: '#000000', text: '#ffffff',
@@ -119,13 +122,14 @@ export async function createTenant(config: Partial<TenantConfig> & { id: string 
       booking: true, menu: true, member: true, comments: true,
       delivery: false, product: false, stores: false,
     },
-    booking: config.booking || { mode: 'RULES', enabled: true, rules: [], seatTypes: [] },
+    booking: config.booking || { mode: 'RULES', enabled: true, rules: [], seatTypes: [], maxGuests: 20, minAdvanceHours: 2, maxAdvanceDays: 30, autoConfirm: false },
     businessHours: config.businessHours || { lunch: { start: '11:30', end: '14:00' }, dinner: { start: '17:30', end: '22:00' } },
     bookingConfig: config.bookingConfig || { maxGuests: 20, minAdvanceHours: 2, maxAdvanceDays: 30, autoConfirm: false },
     stores: config.stores || { enabled: false, stores: [], crossStoreBooking: false },
-    member: config.member || { enabled: false, pointsName: '积分', signInPoints: 10, consumePointsRate: 1, pointsDeductionRate: 100, pointsExpireDays: 365, minDeductionPoints: 100, maxDeductionRate: 0.3, levels: [], benefits: { discount: 1, freeDelivery: false, priorityService: false, birthdayBenefit: { enabled: false }, doublePointsDays: [] } },
+    member: config.member || { enabled: false, pointsName: '积分', signInPoints: 10, consumePointsRate: 1, pointsDeductionRate: 100, pointsExpireDays: 365, minDeductionPoints: 100, maxDeductionRate: 0.3, levels: [] as MemberLevel[], benefits: { discount: 1, freeDelivery: false, priorityService: false, birthdayBenefit: { enabled: false, discount: 1 }, doublePointsDays: [] as number[] } },
     delivery: config.delivery || { enabled: false, minOrderAmount: 0, deliveryFee: 0 },
     product: config.product || { enabled: false, deliverySupported: false, pickupSupported: false, categories: [] },
+    payment: config.payment || { mode: 'simulate', channels: { wechat: { enabled: false, mchid: '', appId: '', apiV3Key: '', privateKeyPath: '', serialNo: '' }, alipay: { enabled: false, appId: '', privateKey: '', alipayPublicKey: '' }, unionpay: { enabled: false, mid: '', tid: '', certPath: '', certPassword: '' } } },
     createdAt: new Date().toISOString(),
     status: 'active',
   };

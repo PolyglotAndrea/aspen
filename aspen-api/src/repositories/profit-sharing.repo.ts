@@ -28,6 +28,6 @@ export const profitSharingRepo = {
   },
 
   async settle(sharingOrderId: string) {
-    await db.update(profitSharingOrders).set({ status: 'settled', settledAt: new Date() }).where(eq(profitSharingOrders.id, sharingOrderId));
+    await db.update(profitSharingOrders).set({ status: 'settled' }).where(eq(profitSharingOrders.id, sharingOrderId));
   },
 };

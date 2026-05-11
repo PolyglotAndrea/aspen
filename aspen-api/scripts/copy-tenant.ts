@@ -10,7 +10,8 @@
  *   bun run scripts/copy-tenant.ts mycafe "我的咖啡馆" aspen
  */
 
-import { createTenant, getTenantConfig, TENANT_REGISTRY } from '../src/config/tenant.registry';
+import { createTenant, getTenantConfig } from '../src/config/tenant.registry';
+import { tenantRepo } from '../src/repositories/tenant.repo';
 import type { TenantConfig, TenantTheme } from '../src/config/tenant.types';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
@@ -53,7 +54,8 @@ async function copyTenant() {
 
   // 2. 检查新租户是否已存在
   console.log(`\n📋 步骤 2: 检查新租户 "${newTenantId}"...`);
-  if (TENANT_REGISTRY[newTenantId]) {
+  const existing = await tenantRepo.findById(newTenantId);
+  if (existing) {
     console.error(`❌ 错误: 租户 "${newTenantId}" 已存在`);
     process.exit(1);
   }
@@ -61,7 +63,7 @@ async function copyTenant() {
 
   // 3. 创建新租户配置
   console.log(`\n📋 步骤 3: 创建新租户配置...`);
-  const newTenant = createTenant({
+  const newTenant = await createTenant({
     id: newTenantId,
     brandName: brandName,
     brandNameEn: newTenantId.toUpperCase(),
@@ -71,8 +73,9 @@ async function copyTenant() {
     },
     booking: {
       ...templateConfig.booking,
-      rules: [...templateConfig.booking.rules],
+      rules: [...(templateConfig.booking.rules || [])],
     },
+    bookingConfig: templateConfig.bookingConfig || { maxGuests: 20, minAdvanceHours: 2, maxAdvanceDays: 30, autoConfirm: false },
   });
   console.log(`   ✅ 租户创建成功: ${newTenant.brandName}`);
 
@@ -87,14 +90,14 @@ async function copyTenant() {
   console.log(`   ✅ 主题配置已生成`);
 
   // 6. 生成前端预约模块配置
-  console.log(`\n📋 步骤 6: 生成预约模块配置...`);
+  console.log(`\n📋 步骤 6: 生成前端预约模块配置...`);
   await generateBookingConfig(newTenant);
   console.log(`   ✅ 预约配置已生成`);
 
-  // 7. 生成静态资源目录
+  // 7. 初始化存储配置
   console.log(`\n📋 步骤 7: 初始化存储配置...`);
-  await initStorageConfig(newTenantId, newTenant.storageBucket);
-  console.log(`   ✅ 存储配置已初始化 (模拟)`);
+  await initStorageConfig(newTenantId, newTenant.storageBucket || `${newTenantId}-cdn`);
+  console.log(`   ✅ 存储配置已初始化`);
 
   console.log(`
 ╔════════════════════════════════════════════════════════════╗
@@ -188,18 +191,19 @@ async function generateBookingConfig(tenant: TenantConfig): Promise<void> {
     mkdirSync(configDir, { recursive: true });
   }
 
+  const bc = tenant.bookingConfig;
   const bookingConfig = {
     mode: tenant.booking.mode,
     rules: tenant.booking.rules,
     seatTypes: tenant.booking.seatTypes,
     bookingConfig: {
-      maxGuests: tenant.bookingConfig.maxGuests,
-      minAdvanceHours: tenant.bookingConfig.minAdvanceHours,
-      maxAdvanceDays: tenant.bookingConfig.maxAdvanceDays,
-      autoConfirm: tenant.bookingConfig.autoConfirm,
-      requireDeposit: tenant.bookingConfig.requireDeposit,
-      depositAmount: tenant.bookingConfig.depositAmount,
-      timeLimit: tenant.bookingConfig.timeLimit,
+      maxGuests: bc?.maxGuests ?? 20,
+      minAdvanceHours: bc?.minAdvanceHours ?? 2,
+      maxAdvanceDays: bc?.maxAdvanceDays ?? 30,
+      autoConfirm: bc?.autoConfirm ?? false,
+      requireDeposit: bc?.requireDeposit,
+      depositAmount: bc?.depositAmount,
+      timeLimit: bc?.timeLimit,
     },
     businessHours: tenant.businessHours,
   };

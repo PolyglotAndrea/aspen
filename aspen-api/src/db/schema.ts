@@ -26,10 +26,22 @@ export const stores = pgTable('stores', {
   longitude: real('longitude'),
   latitude: real('latitude'),
   businessHours: jsonb('business_hours'),
+  // 新增字段
+  rating: real('rating').default(0),                // 评分
+  ratingCount: integer('rating_count').default(0),   // 评分人数
+  monthlySales: integer('monthly_sales').default(0), // 月销量
+  minOrderAmount: real('min_order_amount').default(0), // 起送价
+  deliveryFee: real('delivery_fee').default(0),      // 配送费
+  deliveryDistance: real('delivery_distance').default(5), // 配送距离(km)
+  packPrice: real('pack_price').default(0),          // 包装费
+  notice: text('notice'),                            // 门店公告
+  qrCode: text('qr_code'),                           // 二维码
+  isOpen: boolean('is_open').default(true),          // 是否营业
+  features: jsonb('features').default({}),           // 门店特性(可开发票/包间/WiFi等)
+  images: jsonb('images'), // string[]               // 门店图片
+  description: text('description'),
   status: text('status').default('active'),
   sort: integer('sort').default(0),
-  images: jsonb('images'), // string[]
-  description: text('description'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
@@ -149,16 +161,26 @@ export const products = pgTable('products', {
   tenantId: text('tenant_id').notNull(),
   categoryId: text('category_id').notNull(),
   name: text('name').notNull(),
-  description: text('description'),
-  images: jsonb('images'), // string[]
+  subtitle: text('subtitle'),                             // 副标题/卖点
+  description: text('description'),                       // 富文本详情
+  images: jsonb('images'),                                // string[] 多图
+  videoUrl: text('video_url'),                            // 商品视频
   price: real('price').notNull(),
-  originalPrice: real('original_price'),
+  originalPrice: real('original_price'),                  // 原价/划线价
   stock: integer('stock').default(999),
-  unit: text('unit'),
-  specs: jsonb('specs'),
-  status: text('status').default('active'), // active | inactive | offline
+  unit: text('unit'),                                     // 单位(份/碗/杯)
+  specs: jsonb('specs'),                                  // 商品规格
+  tags: jsonb('tags').default([]),                        // 营销标签: ["招牌","必点","新品"]
+  isRecommend: boolean('is_recommend').default(false),    // 是否推荐
+  isNew: boolean('is_new').default(false),                // 是否新品
+  isHot: boolean('is_hot').default(false),                // 是否热销
   sort: integer('sort').default(0),
+  status: text('status').default('active'),               // active | inactive | offline
+  soldCount: integer('sold_count').default(0),            // 销量
+  rating: real('rating').default(0),                      // 评分
+  ratingCount: integer('rating_count').default(0),        // 评价数
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
 // ==================== 商品分类 ====================
@@ -168,6 +190,9 @@ export const productCategories = pgTable('product_categories', {
   tenantId: text('tenant_id').notNull(),
   name: text('name').notNull(),
   icon: text('icon'),
+  image: text('image'),                                    // 分类图片
+  description: text('description'),                         // 分类描述
+  parentId: text('parent_id'),                              // 父分类ID(支持多级)
   sort: integer('sort').default(0),
   enabled: boolean('enabled').default(true),
 });
@@ -178,15 +203,22 @@ export const deliveryMenuItems = pgTable('delivery_menu_items', {
   id: text('id').primaryKey(),
   tenantId: text('tenant_id').notNull(),
   name: text('name').notNull(),
-  description: text('description'),
+  subtitle: text('subtitle'),                               // 副标题
+  description: text('description'),                          // 富文本描述
   price: real('price').notNull(),
   originalPrice: real('original_price'),
   image: text('image'),
+  images: jsonb('images'),                                  // 多图
   category: text('category').notNull(),
   available: boolean('available').default(true),
   stock: integer('stock').default(999),
-  tags: jsonb('tags'), // string[]
-  specs: jsonb('specs'),
+  tags: jsonb('tags').default([]),                          // 标签: ["招牌","辣","推荐"]
+  specs: jsonb('specs'),                                    // 规格选项
+  isRecommend: boolean('is_recommend').default(false),      // 推荐标记
+  isNew: boolean('is_new').default(false),                  // 新品标记
+  soldCount: integer('sold_count').default(0),              // 月销量
+  rating: real('rating').default(0),                        // 评分
+  sort: integer('sort').default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
@@ -195,12 +227,37 @@ export const deliveryMenuItems = pgTable('delivery_menu_items', {
 export const menuItems = pgTable('menu_items', {
   id: serial('id').primaryKey(),
   tenantId: text('tenant_id').notNull(),
+  categoryId: text('category_id'),                          // 关联分类
   name: text('name').notNull(),
+  subtitle: text('subtitle'),                               // 副标题
   price: real('price').notNull(),
-  description: text('description'),
-  tags: jsonb('tags'), // string[]
+  originalPrice: real('original_price'),                    // 原价
+  description: text('description'),                         // 描述
+  tags: jsonb('tags').default([]),                          // 标签
   imageUrl: text('image_url'),
+  images: jsonb('images'),                                  // 多图
+  isRecommend: boolean('is_recommend').default(false),      // 推荐
+  isNew: boolean('is_new').default(false),                  // 新品
+  isHot: boolean('is_hot').default(false),                  // 热销
   available: boolean('available').default(true),
+  soldCount: integer('sold_count').default(0),              // 销量
+  rating: real('rating').default(0),                        // 评分
+  sort: integer('sort').default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// ==================== 菜单分类 ====================
+
+export const menuCategories = pgTable('menu_categories', {
+  id: serial('id').primaryKey(),
+  tenantId: text('tenant_id').notNull(),
+  name: text('name').notNull(),
+  icon: text('icon'),
+  image: text('image'),
+  description: text('description'),
+  sort: integer('sort').default(0),
+  enabled: boolean('enabled').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
 // ==================== 品牌数据 ====================
@@ -213,45 +270,95 @@ export const brandData = pgTable('brand_data', {
   stories: jsonb('stories'),
 });
 
-// ==================== 短信验证码 ====================
+// ==================== 管理员 ====================
 
+export const admins = pgTable('admins', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id'),
+  username: text('username').notNull(),
+  passwordHash: text('password_hash').notNull(),
+  displayName: text('display_name'),
+  role: text('role').notNull().default('admin'), // admin | super_admin
+  avatar: text('avatar'),
+  status: text('status').default('active'),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// ==================== 支付记录 ====================
+
+export const payments = pgTable('payments', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id').notNull(),
+  orderId: text('order_id').notNull(),
+  transactionNo: text('transaction_no').notNull().unique(),
+  channel: text('channel').notNull(), // wechat | alipay | unionpay | simulate
+  amount: integer('amount').notNull(), // 分
+  status: text('status').default('pending'),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  rawData: jsonb('raw_data'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// ==================== 商品规格(SKU) ====================
+
+export const productSkus = pgTable('product_skus', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id').notNull(),
+  productId: text('product_id').notNull().references(() => products.id),
+  name: text('name').notNull(),             // 规格名称 如 "大杯 / 加辣"
+  price: real('price').notNull(),           // 规格加价(可为负)
+  stock: integer('stock').default(999),
+  sort: integer('sort').default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// ==================== 收藏 ====================
+
+export const favorites = pgTable('favorites', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id').notNull(),
+  memberId: text('member_id').notNull().references(() => members.id),
+  targetType: text('target_type').notNull(), // product | store | menu_item
+  targetId: text('target_id').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (t) => ({
+  memberTargetUnique: unique('member_target_unique').on(t.memberId, t.targetType, t.targetId),
+}));
+
+// ==================== 交易记录 (stub) ====================
+export const transactions = pgTable('transactions', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id').notNull(),
+  orderId: text('order_id').notNull(),
+  transactionNo: text('transaction_no'),
+  channel: text('channel'),
+  type: text('type').notNull(),
+  amount: real('amount').notNull(),
+  status: text('status').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// ==================== 分账订单 (stub) ====================
+export const profitSharingOrders = pgTable('profit_sharing_orders', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id').notNull(),
+  orderId: text('order_id').notNull(),
+  transactionId: text('transaction_id'),
+  amount: real('amount').notNull(),
+  status: text('status').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// ==================== 短信验证码 (stub) ====================
 export const smsCodes = pgTable('sms_codes', {
   id: serial('id').primaryKey(),
   tenantId: text('tenant_id').notNull(),
   phone: text('phone').notNull(),
   code: text('code').notNull(),
-  purpose: text('purpose').default('login'), // login | register | reset
+  type: text('type').notNull(),
+  purpose: text('purpose').default('login'),
   used: boolean('used').default(false),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-});
-
-// ==================== 支付交易流水 ====================
-
-export const transactions = pgTable('transactions', {
-  id: text('id').primaryKey(),
-  tenantId: text('tenant_id').notNull(),
-  orderId: text('order_id').notNull(),
-  channel: text('channel').notNull(), // wechat | alipay | unionpay | simulate
-  transactionNo: text('transaction_no'),
-  amount: real('amount').notNull(),
-  type: text('type').notNull(), // pay | refund
-  status: text('status').default('pending'), // pending | success | failed
-  rawResponse: jsonb('raw_response'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-});
-
-// ==================== 分账记录 ====================
-
-export const profitSharingOrders = pgTable('profit_sharing_orders', {
-  id: text('id').primaryKey(),
-  tenantId: text('tenant_id').notNull(),
-  orderId: text('order_id').notNull(),
-  transactionId: text('transaction_id').notNull(),
-  totalAmount: real('total_amount').notNull(),
-  config: jsonb('config').notNull(), // ProfitSharingConfig
-  status: text('status').default('pending'), // pending | settled | failed
-  settledAt: timestamp('settled_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });

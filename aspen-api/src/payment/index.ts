@@ -75,7 +75,7 @@ export function getPaymentChannel(
         certPath: unionConfig.certPath,
         certPassword: unionConfig.certPassword,
         notifyUrl: unionConfig.notifyUrl,
-        sandbox: config.mode === 'sandbox',
+        testMode: config.mode === 'sandbox',
       });
       break;
     }

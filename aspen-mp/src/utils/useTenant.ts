@@ -174,7 +174,7 @@ export function useTenant(options: UseTenantOptions = {}): UseTenantReturn {
       if (cachedTheme) {
         try {
           theme.value = JSON.parse(cachedTheme);
-          if (autoApply) {
+          if (autoApply && theme.value) {
             applyTheme(theme.value);
           }
         } catch (e) {

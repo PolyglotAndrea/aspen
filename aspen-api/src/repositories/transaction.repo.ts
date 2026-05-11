@@ -40,7 +40,7 @@ export const transactionRepo = {
     return data;
   },
 
-  async update(transactionId: string, data: Partial<typeof transactions.$inferInsert>) {
-    await db.update(transactions).set({ ...data, updatedAt: new Date() }).where(eq(transactions.id, transactionId));
+  async update(tenantId: string, transactionId: string, data: Partial<typeof transactions.$inferInsert>) {
+    await db.update(transactions).set(data).where(and(eq(transactions.id, transactionId), eq(transactions.tenantId, tenantId)));
   },
 };

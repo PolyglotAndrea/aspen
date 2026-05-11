@@ -28,17 +28,6 @@ onMounted(async () => {
   }
 });
 
-const goToMenu = () => {
-  uni.switchTab({ url: '/pages/menu/index' });
-};
-
-const goToBooking = () => {
-  uni.switchTab({ url: '/pages/booking/index' });
-};
-
-const goToAbout = () => {
-  uni.showToast({ title: '关于白杨树', icon: 'none' });
-};
 </script>
 
 <template>
@@ -89,22 +78,6 @@ const goToAbout = () => {
       </view>
     </view>
 
-    <!-- Bottom Dock -->
-    <view class="dock">
-      <view class="dock-item" @tap="goToMenu">
-        <text class="dock-icon">🔥</text>
-        <text class="dock-text">树下有火</text>
-      </view>
-      <view class="dock-item" @tap="goToBooking">
-        <text class="dock-icon">📅</text>
-        <text class="dock-text">预约</text>
-      </view>
-      <view class="dock-item" @tap="goToAbout">
-        <text class="dock-icon">ℹ️</text>
-        <text class="dock-text">关于</text>
-      </view>
-    </view>
-
     <!-- Loading -->
     <view v-if="isLoading" class="loading">
       <text>加载中...</text>
@@ -127,7 +100,7 @@ const goToAbout = () => {
   left: 0;
   width: 100%;
   height: 100%;
-  filter: brightness(0.5);
+  filter: brightness(0.65) saturate(0.8);
 }
 
 .overlay {
@@ -138,9 +111,9 @@ const goToAbout = () => {
   height: 100%;
   background: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.3) 0%,
-    rgba(0, 0, 0, 0.1) 50%,
-    rgba(0, 0, 0, 0.6) 100%
+    rgba(5, 5, 5, 0.4) 0%,
+    rgba(5, 5, 5, 0.2) 50%,
+    rgba(5, 5, 5, 0.8) 100%
   );
 }
 
@@ -157,94 +130,75 @@ const goToAbout = () => {
 
 .brand-header {
   text-align: center;
-  margin-bottom: 60rpx;
+  margin-bottom: 80rpx;
+  animation: fadeInDown 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .title {
   display: block;
-  font-size: 72rpx;
-  font-weight: 300;
-  letter-spacing: 24rpx;
-  color: var(--as-text);
-  opacity: 0.9;
+  font-size: 88rpx;
+  font-weight: 200;
+  letter-spacing: 32rpx;
+  background: linear-gradient(135deg, #ffffff 0%, var(--as-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
+  margin-right: -32rpx; /* Compensation for letter-spacing on last character */
 }
 
 .subtitle {
   display: block;
-  margin-top: 20rpx;
-  font-size: 24rpx;
-  color: var(--as-text-secondary);
-  letter-spacing: 4rpx;
+  margin-top: 24rpx;
+  font-size: 26rpx;
+  color: var(--as-text-muted);
+  letter-spacing: 8rpx;
+  font-weight: 300;
 }
 
 .slogan-section {
   text-align: center;
+  animation: fadeInUp 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both;
 }
 
 .slogan-cn {
   display: block;
-  font-size: 56rpx;
+  font-size: 64rpx;
   font-weight: 300;
   color: var(--as-text);
-  letter-spacing: 8rpx;
+  letter-spacing: 12rpx;
+  text-shadow: 0 4rpx 16rpx rgba(0,0,0,0.4);
 }
 
 .slogan-en {
   display: block;
-  margin-top: 16rpx;
+  margin-top: 24rpx;
   font-size: 24rpx;
-  color: var(--as-text-secondary);
-  letter-spacing: 8rpx;
+  color: var(--as-accent);
+  letter-spacing: 10rpx;
+  font-weight: 400;
 }
 
 .stories-preview {
-  margin-top: 80rpx;
+  margin-top: 100rpx;
   width: 100%;
+  animation: fadeIn 2s ease 0.6s both;
 }
 
 .story-title {
   display: block;
-  font-size: var(--as-font-size-base);
-  color: var(--as-text-muted);
-  margin-bottom: 10rpx;
+  font-size: var(--as-font-size-lg);
+  color: var(--as-accent);
+  margin-bottom: 12rpx;
+  font-weight: 400;
+  letter-spacing: 4rpx;
 }
 
 .story-content {
   display: block;
   font-size: var(--as-font-size-sm);
   color: var(--as-text-secondary);
-  line-height: 1.6;
-}
-
-.dock {
-  position: absolute;
-  bottom: 60rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 60rpx;
-  padding: 24rpx 60rpx;
-  background: var(--as-surface-glass);
-  backdrop-filter: blur(var(--as-blur));
-  border-radius: 100rpx;
-  border: 1px solid var(--as-border);
-  z-index: 20;
-}
-
-.dock-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.dock-icon {
-  font-size: 32rpx;
-}
-
-.dock-text {
-  font-size: 22rpx;
-  color: var(--as-text-muted);
+  line-height: 1.8;
+  font-weight: 300;
 }
 
 .loading {
@@ -252,7 +206,25 @@ const goToAbout = () => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: var(--as-text-secondary);
+  color: var(--as-accent);
   font-size: var(--as-font-size-base);
+  letter-spacing: 4rpx;
+  font-weight: 300;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-40rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>

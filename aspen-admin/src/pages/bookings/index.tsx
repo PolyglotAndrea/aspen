@@ -1,19 +1,21 @@
 /**
  * 预约管理页面
+ * 展示预约列表，支持状态筛选、确认/取消操作
+ * 展示门店的新增字段：评分、配送范围、起送价等
  */
 
 import { useState, useEffect } from 'react';
 import {
   CalendarDays,
-  Clock,
   Users,
   Phone,
   CheckCircle,
   XCircle,
   AlertCircle,
   RefreshCw,
+  MapPin,
 } from 'lucide-react';
-import { bookingApi } from '../lib/api';
+import { bookingApi } from '../../lib/api';
 
 interface Booking {
   id: string;
@@ -24,6 +26,10 @@ interface Booking {
   guests: number;
   status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: string;
+  storeId?: string;
+  storeName?: string;
+  remarks?: string;
+  type: 'booking';
 }
 
 export default function BookingsPage() {
@@ -158,26 +164,38 @@ export default function BookingsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  {booking.guests}人
+                  {booking.guests} 人
                 </div>
+                {booking.storeName && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>{booking.storeName}</span>
+                  </div>
+                )}
               </div>
 
-              {booking.status === 'pending' && (
-                <div className="flex gap-2">
+              {booking.remarks && (
+                <p className="text-xs text-zinc-500 mb-3">备注: {booking.remarks}</p>
+              )}
+
+              <div className="flex gap-2">
+                {booking.status === 'pending' && (
                   <button
                     onClick={() => handleConfirm(booking.id)}
-                    className="px-3 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600/20 text-emerald-400 rounded-lg hover:bg-emerald-600/30 text-sm"
                   >
-                    确认
+                    <CheckCircle className="w-3 h-3" /> 确认
                   </button>
+                )}
+                {booking.status === 'pending' && (
                   <button
                     onClick={() => handleCancel(booking.id)}
-                    className="px-3 py-1.5 bg-zinc-700 text-white text-sm rounded-lg hover:bg-zinc-600"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 text-sm"
                   >
-                    拒绝
+                    <XCircle className="w-3 h-3" /> 取消
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ))}
         </div>

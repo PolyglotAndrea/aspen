@@ -101,23 +101,26 @@ const handleClick = (e: any) => {
 .as-card {
   position: relative;
   background: var(--as-surface);
-  border: var(--as-border);
+  border: 1px solid var(--as-border);
   border-radius: var(--as-radius-lg);
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--as-shadow-sm);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: var(--as-glass-shadow), var(--as-shadow-sm);
 
   &--clickable {
     cursor: pointer;
 
     &:active {
-      transform: scale(0.98);
+      transform: scale(0.97);
+      box-shadow: var(--as-glass-shadow), 0 2rpx 8rpx rgba(0, 0, 0, 0.5);
     }
   }
 
   &__header {
     padding-bottom: var(--as-spacing-sm);
     margin-bottom: var(--as-spacing-sm);
-    border-bottom: 1px solid var(--as-border);
+    border-bottom: 1px solid var(--as-border-light);
   }
 
   &__body {
@@ -131,7 +134,7 @@ const handleClick = (e: any) => {
   &__footer {
     margin-top: var(--as-spacing-sm);
     padding-top: var(--as-spacing-sm);
-    border-top: 1px solid var(--as-border);
+    border-top: 1px solid var(--as-border-light);
   }
 }
 </style>

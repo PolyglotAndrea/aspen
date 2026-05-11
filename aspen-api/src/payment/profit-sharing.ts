@@ -75,8 +75,7 @@ export async function createSharingOrder(
     tenantId,
     orderId,
     transactionId,
-    totalAmount,
-    config: storedConfig,
+    amount: totalAmount,
     status: 'pending',
   });
 

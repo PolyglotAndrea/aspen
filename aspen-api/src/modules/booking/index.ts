@@ -1,13 +1,15 @@
 /**
- * 预订模块 (Booking Module)
+ * 预订模块 (Booking Module) v2.0
  *
  * 支持多门店预订、在线选座、核销等功能
  * 继承统一订单系统
  */
 
 import { Elysia, t } from 'elysia';
+import type { Store, StoreDetail } from '../../config/tenant.types';
 import { getTenantConfig } from '../../config/tenant.registry';
 import { storeRepo } from '../../repositories/store.repo';
+import { deliveryRepo } from '../../repositories/product.repo';
 
 // ============================================
 // 预订路由
@@ -40,7 +42,7 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
     };
   })
 
-  // 获取门店列表
+  // 获取门店列表 (增强版 - 含评分/配送等)
   .get('/stores', async ({ headers }) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
     const config = getTenantConfig(tenantId);
@@ -59,15 +61,29 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
         shortName: s.shortName,
         address: s.address,
         phone: s.phone,
+        longitude: s.longitude,
+        latitude: s.latitude,
         businessHours: s.businessHours,
-        status: s.status,
+        minOrderAmount: s.minOrderAmount,
+        deliveryFee: s.deliveryFee,
+        packPrice: s.packPrice,
+        notice: s.notice,
+        qrCode: s.qrCode,
+        isOpen: s.isOpen,
+        features: s.features,
+        rating: s.rating,
+        ratingCount: s.ratingCount,
+        monthlySales: s.monthlySales,
+        deliveryDistance: s.deliveryDistance,
         images: s.images,
         description: s.description,
+        status: s.status,
+        sort: s.sort,
       })),
     };
   })
 
-  // 获取门店详情
+  // 获取门店详情 (含配送范围)
   .get('/stores/:id', async ({ params: { id }, headers }) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
     const config = getTenantConfig(tenantId);
@@ -82,7 +98,28 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
       throw new Error('门店不存在');
     }
 
-    return store;
+    // 获取该门店的外卖配置
+    let deliveryAreas;
+    if (config?.features.delivery) {
+      const deliveryConfig = config.delivery;
+      if (deliveryConfig?.areas) {
+        deliveryAreas = deliveryConfig.areas;
+      }
+    }
+
+    const storeDetail: StoreDetail = {
+      ...store,
+      rating: store.rating ?? 0,
+      ratingCount: store.ratingCount ?? 0,
+      monthlySales: store.monthlySales ?? 0,
+      minOrderAmount: store.minOrderAmount ?? 0,
+      deliveryFee: store.deliveryFee ?? 0,
+      deliveryDistance: store.deliveryDistance ?? 5,
+      packPrice: store.packPrice ?? 0,
+      deliveryAreas: deliveryAreas,
+    };
+
+    return storeDetail;
   })
 
   // 创建门店
@@ -94,7 +131,12 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
       throw new Error('多门店功能未启用');
     }
 
-    const { name, shortName, address, phone, longitude, latitude, businessHours, description, images } = body as any;
+    const {
+      name, shortName, address, phone,
+      longitude, latitude, businessHours, description, images,
+      minOrderAmount, deliveryFee, packPrice, notice, qrCode,
+      features, isOpen,
+    } = body as any;
 
     if (!name || !address || !phone) {
       throw new Error('缺少必要参数');
@@ -118,6 +160,17 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
       sort: existingStores.length,
       description,
       images,
+      rating: 0,
+      ratingCount: 0,
+      monthlySales: 0,
+      minOrderAmount: minOrderAmount || 0,
+      deliveryFee: deliveryFee || 0,
+      deliveryDistance: ((body as any).deliveryDistance as number) || 5,
+      packPrice: packPrice || 0,
+      notice: notice || '',
+      qrCode: qrCode || '',
+      features: features || {},
+      isOpen: isOpen !== undefined ? isOpen : true,
     };
 
     await storeRepo.create(newStore);
@@ -146,7 +199,14 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
     }
 
     const updates = body as any;
-    const allowedFields = ['name', 'shortName', 'address', 'phone', 'longitude', 'latitude', 'businessHours', 'status', 'sort', 'description', 'images'];
+    const allowedFields = [
+      'name', 'shortName', 'address', 'phone',
+      'longitude', 'latitude', 'businessHours', 'status',
+      'sort', 'description', 'images',
+      'minOrderAmount', 'deliveryFee', 'packPrice',
+      'notice', 'qrCode', 'features', 'isOpen',
+      'rating', 'ratingCount', 'monthlySales',
+    ];
 
     const updateData: Record<string, any> = {};
     for (const field of allowedFields) {
@@ -197,7 +257,6 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
     }
 
     if (!store) {
-      // 如果没有多门店配置，使用默认桌位
       if (config && config.booking.seatTypes.length > 0) {
         return {
           storeId: 'default',
@@ -280,7 +339,6 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
     let tables: any[] = [];
 
     if (config.features.stores && storeId) {
-      // 多门店模式
       const store = await storeRepo.findById(tenantId, storeId as string);
       if (store) {
         const storeTables = await storeRepo.findTables(tenantId, storeId as string);
@@ -288,11 +346,10 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
           t.available && t.capacity >= parseInt(guests as string || '1')
         );
       }
-    } else {
-      // 单门店模式
+    } else if (config.booking?.seatTypes) {
       tables = config.booking.seatTypes
-        .filter(s => s.available && s.capacity >= parseInt(guests as string || '1'))
-        .map(s => ({
+        .filter((s: any) => s.available && s.capacity >= parseInt(guests as string || '1'))
+        .map((s: any) => ({
           id: s.id,
           name: s.name,
           icon: s.icon,
@@ -301,7 +358,6 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
         }));
     }
 
-    // 如果是 SEATING 模式，返回桌位列表供选择
     if (config.booking.mode === 'SEATING') {
       return {
         mode: 'SEATING',
@@ -312,7 +368,6 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
       };
     }
 
-    // RULES 模式不需要选座
     return {
       mode: 'RULES',
       date,
@@ -344,13 +399,10 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
     const tenantId = headers['x-tenant-id'] || 'aspen';
     const config = getTenantConfig(tenantId);
 
-    // 从订单系统获取预订订单
-    // 这里可以添加额外的预订列表逻辑
     return {
       tenantId,
       brandName: config?.brandName,
       mode: config?.booking.mode,
-      // 预订列表将通过统一订单系统获取
     };
   })
 
@@ -358,7 +410,6 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
   .get('/:id', ({ params: { id }, headers }) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
 
-    // 预订详情将通过统一订单系统获取
     return {
       id,
       tenantId,
@@ -366,7 +417,7 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
     };
   })
 
-  // 创建预订 (简化版，完整逻辑在统一订单系统)
+  // 创建预订
   .post('/', async ({ body, headers }) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
     const config = getTenantConfig(tenantId);
@@ -376,124 +427,31 @@ export const bookingRoutes = new Elysia({ prefix: '/bookings' })
     }
 
     const {
-      name,
-      phone,
-      date,
-      time,
-      guests,
-      storeId,
-      tableId,
-      tableName,
-      remarks,
+      name, phone, date, time, guests, storeId,
     } = body as any;
 
-    // 验证必填字段
-    if (!name || !phone || !date || !time || !guests) {
+    if (!name || !phone || !date || !time) {
       throw new Error('缺少必要参数');
     }
 
-    // 验证人数
-    if (guests > config.bookingConfig.maxGuests) {
-      throw new Error(`最多支持 ${config.bookingConfig.maxGuests} 人预订`);
-    }
-
-    // SEATING 模式需要选座
-    if (config.booking.mode === 'SEATING' && config.booking.seatTypes.length > 0) {
-      if (!tableId) {
-        throw new Error('请选择桌位');
-      }
-    }
-
-    // 验证门店
-    if (config.features.stores && storeId) {
-      const store = await storeRepo.findById(tenantId, storeId);
-      if (!store) {
-        throw new Error('门店不存在');
-      }
-      if (store.status !== 'active') {
-        throw new Error('门店已停业');
-      }
-    }
-
-    // 返回预订信息，实际创建通过统一订单系统
-    const verifyCode = Math.random().toString(36).substr(2, 6).toUpperCase();
-
-    console.log(`[Booking] Created: ${name}, ${date} ${time}, ${guests}人`);
-
-    return {
-      success: true,
-      booking: {
-        id: `${tenantId}_booking_${Date.now()}`,
-        tenantId,
-        name,
-        phone,
-        date,
-        time,
-        guests,
-        storeId,
-        tableId,
-        tableName,
-        verifyCode,
-        status: config.bookingConfig.autoConfirm ? 'confirmed' : 'pending',
-        createdAt: new Date().toISOString(),
+    const orderData = {
+      type: 'booking',
+      storeId,
+      items: [{
+        productId: 'booking',
+        productName: '到店预订',
+        price: 0,
+        quantity: 1,
+        subtotal: 0,
+      }],
+      bookingInfo: {
+        date, time, guests, name, phone,
       },
-      message: config.bookingConfig.autoConfirm ? '预订成功' : '预订已提交，等待确认',
-      deposit: config.bookingConfig.requireDeposit ? {
-        required: true,
-        amount: config.bookingConfig.depositAmount,
-        message: `需支付订金 ¥${config.bookingConfig.depositAmount}`,
-      } : undefined,
     };
-  }, {
-    body: t.Object({
-      name: t.String({ minLength: 1 }),
-      phone: t.String({ pattern: '^1\\d{10}$' }),
-      date: t.String({ format: 'date' }),
-      time: t.String(),
-      guests: t.Number({ minimum: 1, maximum: 50 }),
-      storeId: t.Optional(t.String()),
-      tableId: t.Optional(t.String()),
-      tableName: t.Optional(t.String()),
-      remarks: t.Optional(t.String()),
-    }),
-  })
 
-  // 确认预订 (管理员操作)
-  .post('/:id/confirm', ({ params: { id }, headers }) => {
-    const tenantId = headers['x-tenant-id'] || 'aspen';
-
-    // 通过统一订单系统处理
     return {
       success: true,
-      bookingId: id,
-      message: '确认成功，请使用 /api/v1/orders/:id/confirm',
-    };
-  })
-
-  // 取消预订
-  .post('/:id/cancel', ({ params: { id }, headers }) => {
-    const tenantId = headers['x-tenant-id'] || 'aspen';
-
-    // 通过统一订单系统处理
-    return {
-      success: true,
-      bookingId: id,
-      message: '取消成功，请使用 /api/v1/orders/:id/cancel',
-    };
-  })
-
-  // 核销预订
-  .post('/:id/verify', ({ params: { id }, body, headers }) => {
-    const tenantId = headers['x-tenant-id'] || 'aspen';
-    const { verifyCode } = body as any;
-
-    // 通过统一订单系统处理
-    return {
-      success: true,
-      bookingId: id,
-      verifyCode,
-      message: '核销成功，请使用 /api/v1/orders/:id/verify',
+      message: '预订已提交，请选择桌位并完成支付',
+      data: orderData,
     };
   });
-
-export default bookingRoutes;

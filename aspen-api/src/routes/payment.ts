@@ -10,6 +10,10 @@ import { orderRepo } from '../repositories/order.repo';
 import { transactionRepo } from '../repositories/transaction.repo';
 import { profitSharingRepo } from '../repositories/profit-sharing.repo';
 import { getTenantConfig } from '../config/tenant.registry';
+import type { PaymentConfig } from '../config/tenant.types';
+
+// Bridge our simple PaymentConfig to what the payment code expects
+type BridgePaymentConfig = PaymentConfig extends TenantPaymentConfig ? PaymentConfig : TenantPaymentConfig;
 
 function generateTransactionId(): string {
   return `txn_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
@@ -34,17 +38,17 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
     }
 
     const { paymentMethod } = body as any;
-    const channel: PaymentChannelType = paymentMethod || getDefaultChannel(config?.payment as TenantPaymentConfig);
+    const channel: PaymentChannelType = paymentMethod || getDefaultChannel(config?.payment);
 
     // 创建支付
-    const paymentChannel = getPaymentChannel(channel, config?.payment as TenantPaymentConfig);
+    const paymentChannel = getPaymentChannel(channel, config?.payment);
     const result = await paymentChannel.createPayment({
       orderId: order.id,
       orderNo: order.orderNo,
-      amount: Math.round(order.totalAmount * 100), // 转为分
+      amount: Math.round(order.total * 100), // 转为分
       description: `订单 ${order.orderNo}`,
       channel,
-      notifyUrl: config?.payment?.channels?.[channel]?.notifyUrl,
+      notifyUrl: channel !== 'simulate' ? config?.payment?.channels?.[channel]?.notifyUrl : undefined,
     });
 
     if (!result.success) {
@@ -58,7 +62,7 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
       orderId: order.id,
       transactionNo: result.transactionNo,
       channel,
-      amount: Math.round(order.totalAmount * 100),
+      amount: Math.round(order.total * 100),
       status: 'pending',
       type: 'pay',
     });
@@ -85,7 +89,7 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
     const tenantId = headers['x-tenant-id'] || 'aspen';
     const config = getTenantConfig(tenantId);
 
-    if (config?.payment?.mode !== 'simulate') {
+    if ((config as any)?.payment?.mode !== 'simulate') {
       throw new Error('仅模拟模式支持手动确认');
     }
 
@@ -111,7 +115,7 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
   // 微信支付回调
   .post('/notify/wechat', async ({ headers, body }) => {
     const config = getTenantConfig('aspen'); // 从回调中解析 tenantId
-    const channel = getPaymentChannel('wechat', config?.payment as TenantPaymentConfig);
+    const channel = getPaymentChannel('wechat', config?.payment);
 
     const event = await channel.verifyWebhook(headers as Record<string, string>, typeof body === 'string' ? body : JSON.stringify(body));
 
@@ -140,7 +144,7 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
   // 支付宝回调
   .post('/notify/alipay', async ({ headers, body }) => {
     const config = getTenantConfig('aspen');
-    const channel = getPaymentChannel('alipay', config?.payment as TenantPaymentConfig);
+    const channel = getPaymentChannel('alipay', config?.payment);
 
     const event = await channel.verifyWebhook(headers as Record<string, string>, typeof body === 'string' ? body : JSON.stringify(body));
 
@@ -162,7 +166,7 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
   // 银联回调
   .post('/notify/unionpay', async ({ headers, body }) => {
     const config = getTenantConfig('aspen');
-    const channel = getPaymentChannel('unionpay', config?.payment as TenantPaymentConfig);
+    const channel = getPaymentChannel('unionpay', config?.payment);
 
     const event = await channel.verifyWebhook(headers as Record<string, string>, typeof body === 'string' ? body : JSON.stringify(body));
 
@@ -208,18 +212,18 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
     const order = await orderRepo.findById(tenantId, params.id);
     if (!order) throw new Error('订单不存在');
 
-    if (!['paid', 'confirmed', 'preparing', 'completed'].includes(order.status)) {
+    if (!order.status || !['paid', 'confirmed', 'preparing', 'completed'].includes(order.status)) {
       throw new Error(`订单状态不允许退款: ${order.status}`);
     }
 
     const tx = await transactionRepo.findByOrderId(tenantId, order.id);
-    if (!tx) throw new Error('无支付记录');
+    if (!tx || !tx.transactionNo) throw new Error('无支付记录');
 
     const { reason, amount } = body as any;
     const refundAmount = amount || tx.amount;
     const refundNo = generateRefundNo();
 
-    const channel = getPaymentChannel(tx.channel as PaymentChannelType, config?.payment as TenantPaymentConfig);
+    const channel = getPaymentChannel((tx.channel || 'simulate') as PaymentChannelType, config?.payment);
     const result = await channel.refund({
       transactionNo: tx.transactionNo,
       refundNo,
@@ -268,6 +272,24 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
     const tenantId = headers['x-tenant-id'] || 'aspen';
     const result = await settleSharingOrder(tenantId, params.id);
     return { success: true, profitSharing: result };
+  })
+
+  // 交易流水列表
+  .get('/transactions', async ({ query, headers }) => {
+    const tenantId = headers['x-tenant-id'] || 'aspen';
+    const page = Number(query.page) || 1;
+    const pageSize = Number(query.pageSize) || 20;
+    const channel = query.channel as string | undefined;
+    const status = query.status as string | undefined;
+
+    const result = await transactionRepo.findByTenant(tenantId, { page, pageSize, channel, status });
+
+    return {
+      transactions: result.transactions,
+      total: result.total,
+      page,
+      pageSize,
+    };
   });
 
 export default paymentRoutes;

@@ -204,7 +204,7 @@ function signWithCert(
 ): string {
   const signStr = buildSignString(params);
   const sign = createSign('SHA256WithRSA');
-  sign.update(signStr, CHARSET);
+  sign.update(signStr, 'utf-8');
   return sign.sign(privateKeyPem, 'base64');
 }
 
@@ -216,7 +216,7 @@ function verifyCertSign(
   if (!certificatePem || !signature) return false;
   const signStr = buildSignString(params);
   const verify = createVerify('SHA256WithRSA');
-  verify.update(signStr, CHARSET);
+  verify.update(signStr, 'utf-8');
   return verify.verify(certificatePem, signature, 'base64');
 }
 

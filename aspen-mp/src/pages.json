@@ -27,6 +27,34 @@
         "navigationStyle": "custom",
         "navigationBarTitleText": "我的"
       }
+    },
+    {
+      "path": "pages/cart/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "购物车"
+      }
+    },
+    {
+      "path": "pages/order/detail",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/payment/result",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "支付结果"
+      }
+    },
+    {
+      "path": "pages/member/points",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "积分明细"
+      }
     }
   ],
   "globalStyle": {
@@ -37,10 +65,10 @@
     "backgroundTextStyle": "light"
   },
   "tabBar": {
-    "color": "rgba(255, 255, 255, 0.5)",
-    "selectedColor": "#ffffff",
-    "backgroundColor": "rgba(0, 0, 0, 0.8)",
-    "borderStyle": "white",
+    "color": "#999999",
+    "selectedColor": "#d4a853",
+    "backgroundColor": "#0A0A0A",
+    "borderStyle": "black",
     "list": [
       {
         "pagePath": "pages/index/index",

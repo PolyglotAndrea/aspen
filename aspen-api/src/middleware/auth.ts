@@ -11,7 +11,7 @@ export interface AuthContext {
   memberId: string;
   tenantId: string;
   phone: string;
-  role: 'member' | 'admin';
+  role: 'member' | 'admin' | 'super_admin';
 }
 
 /**

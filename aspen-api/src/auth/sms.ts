@@ -20,6 +20,7 @@ export async function sendSmsCode(tenantId: string, phone: string): Promise<{ co
     tenantId,
     phone,
     code,
+    type: 'login',
     purpose: 'login',
     expiresAt,
   });

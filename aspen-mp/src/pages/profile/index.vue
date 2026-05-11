@@ -156,49 +156,56 @@ onMounted(() => {
 }
 
 .profile-header {
-  padding: 180rpx 40rpx 40rpx;
+  padding: 160rpx 40rpx 40rpx;
   text-align: center;
+  animation: fadeInDown 1s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .header-title {
   display: block;
-  font-size: var(--as-font-size-xl);
-  font-weight: 300;
+  font-size: 60rpx;
+  font-weight: 200;
   color: var(--as-text);
-  letter-spacing: 8rpx;
+  letter-spacing: 12rpx;
+  margin-right: -12rpx;
 }
 
 .header-subtitle {
   display: block;
-  margin-top: 10rpx;
-  font-size: var(--as-font-size-sm);
-  color: var(--as-text-secondary);
-  letter-spacing: 4rpx;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: var(--as-accent);
+  letter-spacing: 8rpx;
+  font-weight: 300;
 }
 
 .member-section {
   padding: 0 40rpx;
+  animation: fadeIn 1.2s ease 0.2s both;
 }
 
 .login-prompt {
   display: flex;
   align-items: center;
-  gap: var(--as-spacing-base);
+  gap: var(--as-spacing-lg);
 }
 
 .login-avatar {
-  width: 100rpx;
-  height: 100rpx;
+  width: 110rpx;
+  height: 110rpx;
   border-radius: 50%;
-  background: var(--as-surface);
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
+  border: 1px solid var(--as-border-light);
   display: flex;
   justify-content: center;
   align-items: center;
+  box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.4);
 }
 
 .avatar-text {
-  font-size: 40rpx;
+  font-size: 44rpx;
   color: var(--as-text-muted);
+  font-weight: 300;
 }
 
 .login-info {
@@ -207,66 +214,86 @@ onMounted(() => {
 
 .login-title {
   display: block;
-  font-size: var(--as-font-size-base);
+  font-size: var(--as-font-size-lg);
   color: var(--as-text);
-  font-weight: 500;
+  font-weight: 400;
+  letter-spacing: 2rpx;
 }
 
 .login-subtitle {
   display: block;
   font-size: var(--as-font-size-sm);
-  color: var(--as-text-secondary);
-  margin-top: 4rpx;
+  color: var(--as-text-muted);
+  margin-top: 8rpx;
+  font-weight: 300;
 }
 
 .login-btn {
-  padding: 16rpx 32rpx;
-  background: var(--as-primary);
+  padding: 16rpx 40rpx;
+  background: linear-gradient(135deg, var(--as-accent) 0%, #b8860b 100%);
   border-radius: var(--as-radius-full);
+  box-shadow: 0 4rpx 16rpx rgba(212, 168, 83, 0.4);
+  transition: transform 0.2s;
+
+  &:active {
+    transform: scale(0.95);
+  }
 
   text {
     font-size: var(--as-font-size-sm);
-    color: #fff;
+    color: #000;
     font-weight: 500;
+    letter-spacing: 2rpx;
   }
 }
 
 .quick-links {
-  padding: var(--as-spacing-lg) 40rpx 0;
+  padding: var(--as-spacing-xl) 40rpx 0;
+  animation: fadeIn 1.2s ease 0.3s both;
 }
 
 .links-row {
   display: flex;
   justify-content: space-around;
+  padding: 10rpx 0;
 }
 
 .link-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8rpx;
+  gap: 16rpx;
+  transition: transform 0.3s;
 
   &:active {
-    opacity: 0.7;
+    transform: scale(0.9);
+    opacity: 0.8;
   }
 }
 
 .link-icon {
-  font-size: 40rpx;
+  font-size: 44rpx;
+  filter: drop-shadow(0 2rpx 4rpx rgba(0,0,0,0.3));
 }
 
 .link-label {
   font-size: var(--as-font-size-xs);
   color: var(--as-text-muted);
+  font-weight: 300;
+  letter-spacing: 2rpx;
 }
 
 .menu-section {
-  padding: var(--as-spacing-lg) 40rpx 0;
+  padding: var(--as-spacing-xl) 40rpx 0;
+  animation: fadeIn 1.2s ease 0.4s both;
 }
 
 .menu-list {
   display: flex;
   flex-direction: column;
+  border-radius: var(--as-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--as-border-light);
 }
 
 .menu-item {
@@ -281,27 +308,44 @@ onMounted(() => {
 }
 
 .menu-icon {
-  font-size: var(--as-font-size-lg);
-  margin-right: var(--as-spacing-sm);
+  font-size: 36rpx;
+  margin-right: var(--as-spacing-base);
 }
 
 .menu-title {
   font-size: var(--as-font-size-base);
   color: var(--as-text);
+  font-weight: 400;
+  letter-spacing: 2rpx;
 }
 
 .menu-arrow {
-  font-size: var(--as-font-size-lg);
+  font-size: 40rpx;
   color: var(--as-text-secondary);
+  font-weight: 200;
 }
 
 .footer {
-  padding: 60rpx 40rpx;
+  padding: 80rpx 40rpx;
   text-align: center;
+  animation: fadeIn 1.5s ease 0.6s both;
 }
 
 .footer-text {
-  font-size: var(--as-font-size-xs);
+  font-size: 20rpx;
   color: var(--as-text-secondary);
+  letter-spacing: 6rpx;
+  font-weight: 300;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-30rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>

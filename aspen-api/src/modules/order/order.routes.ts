@@ -351,7 +351,7 @@ export const orderRoutes = new Elysia({ prefix: '/orders' })
 
     // 如果是自动确认的配置，直接确认
     const config = getTenantConfig(tenantId);
-    if (config?.bookingConfig.autoConfirm && order.type === 'booking') {
+    if (config?.bookingConfig?.autoConfirm && order.type === 'booking') {
       newStatus = 'confirmed';
     }
 

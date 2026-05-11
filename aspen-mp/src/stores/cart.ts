@@ -53,7 +53,7 @@ export const useCartStore = defineStore('cart', {
 
     async updateQuantity(productId: string, quantity: number, spec?: string) {
       try {
-        const res = await orderApi.updateCartItem(productId, quantity, spec) as any;
+        const res = await orderApi.updateCart(productId, { quantity, spec }) as any;
         if (res.cart) {
           this.items = res.cart.items;
           this.totalQuantity = res.cart.totalQuantity;
@@ -89,9 +89,6 @@ export const useCartStore = defineStore('cart', {
       },
       setItem: (key: string, value: string) => {
         try { uni.setStorageSync(key, value); } catch {}
-      },
-      removeItem: (key: string) => {
-        try { uni.removeStorageSync(key); } catch {}
       },
     },
   },

@@ -99,6 +99,7 @@ interface FormData {
 }
 
 interface FormErrors {
+  [key: string]: string | undefined;
   name?: string;
   phone?: string;
   date?: string;

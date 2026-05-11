@@ -104,9 +104,6 @@ export const useTenantStore = defineStore('tenant', {
       setItem: (key: string, value: string) => {
         try { uni.setStorageSync(key, value); } catch {}
       },
-      removeItem: (key: string) => {
-        try { uni.removeStorageSync(key); } catch {}
-      },
     },
   },
 });

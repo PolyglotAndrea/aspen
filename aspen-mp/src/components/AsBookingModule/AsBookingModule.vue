@@ -67,7 +67,7 @@
             :placeholder="placeholders.remarks || '如有特殊需求请备注 (过敏史、儿童椅等)'"
             :maxlength="remarksMaxLength"
           />
-          <text class="remarks-count">{{ formData.remarks.length }}/{{ remarksMaxLength }}</text>
+          <text class="remarks-count">{{ (formData.remarks || '').length }}/{{ remarksMaxLength }}</text>
         </view>
       </view>
 

@@ -28,7 +28,7 @@ export interface TenantPluginOptions {
 /**
  * 获取租户上下文
  */
-function getTenantContext(headers: Record<string, string>, options: TenantPluginOptions): TenantContext {
+async function getTenantContext(headers: Record<string, string>, options: TenantPluginOptions): Promise<TenantContext> {
   const { allowDevCreation = false, defaultTenant = 'aspen' } = options;
 
   // 1. 从请求头获取租户 ID
@@ -41,7 +41,7 @@ function getTenantContext(headers: Record<string, string>, options: TenantPlugin
   if (!config) {
     // 开发模式：自动创建租户
     if (allowDevCreation) {
-      const newTenant = createTenant({ id: tenantId, brandName: tenantId });
+      const newTenant = await createTenant({ id: tenantId, brandName: tenantId });
       return {
         config: newTenant,
       };
@@ -67,8 +67,9 @@ export function tenantPlugin(options: TenantPluginOptions = {}) {
 
   return (app: Elysia) =>
     app
-      .derive(({ headers }) => {
-        return getTenantContext(headers as Record<string, string>, pluginOptions);
+      .derive(async ({ headers }) => {
+        const ctx = await getTenantContext(headers as Record<string, string>, pluginOptions);
+        return { tenant: ctx };
       })
       .onBeforeHandle(({ tenant, set, headers, path }) => {
         // 跳过健康检查和 Swagger 路由
@@ -102,10 +103,12 @@ export function getTenantApiResponse(tenantId: string): TenantApiResponse | null
   if (!config) return null;
 
   return {
+    success: true,
     tenantId: config.id,
     brandName: config.brandName,
     brandNameEn: config.brandNameEn,
     theme: config.theme,
+    features: config.features,
   };
 }
 

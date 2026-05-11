@@ -1,6 +1,12 @@
 /**
  * 租户配置类型定义 (Tenant Configuration Types)
  * 扩展支持多门店、会员、外卖、周边商品等功能
+ *
+ * v2.0 优化: 对齐市面主流餐饮+电商小程序标准模型
+ * - 商品: SKU系统、营销标签、富文本、销量/评分
+ * - 门店: 配送范围、评分、公告、二维码
+ * - 菜单: 多级分类、多图、推荐/新品/热销标记
+ * - 外卖: 多规格、推荐/标签、销量统计
  */
 
 // ============================================
@@ -46,38 +52,224 @@ export interface SeatType {
 }
 
 // ============================================
-// 门店相关类型
+// 会员相关类型
 // ============================================
 
-/** 门店配置 */
-export interface Store {
+/** 会员等级 */
+export interface MemberLevel {
   id: string;
   name: string;
-  /** 门店简称 */
-  shortName?: string;
-  address: string;
-  phone: string;
-  /** 经度 */
-  longitude?: number;
-  /** 纬度 */
-  latitude?: number;
-  /** 营业时间 */
-  businessHours: BusinessHours;
-  /** 桌位列表 */
-  tables?: Table[];
-  /** 状态 */
-  status: 'active' | 'inactive' | 'maintenance';
-  /** 创建时间 */
-  createdAt: string;
-  /** 排序 */
-  sort: number;
-  /** 图片 */
-  images?: string[];
-  /** 描述 */
+  level: number;
+  icon?: string;
+  /** 升级所需积分 */
+  upgradePoints: number;
+  /** 积分倍率 */
+  pointsRate?: number;
+  /** 折扣 (0-1) */
+  discount?: number;
   description?: string;
 }
 
-/** 多门店配置 */
+/** 会员配置 */
+export interface MemberConfig {
+  enabled: boolean;
+  /** 积分名称 */
+  pointsName: string;
+  /** 等级列表 */
+  levels: MemberLevel[];
+  /** 签到积分 */
+  signInPoints: number;
+  /** 消费积分倍率 */
+  consumePointsRate: number;
+  /** 积分抵扣率 */
+  pointsDeductionRate: number;
+  /** 最低抵扣积分 */
+  minDeductionPoints: number;
+  /** 最高抵扣倍率 */
+  maxDeductionRate: number;
+  /** 积分过期天数 */
+  pointsExpireDays: number;
+  /** 会员权益 */
+  benefits: MemberBenefits;
+}
+
+/** 会员权益 */
+export interface MemberBenefits {
+  discount: number;
+  freeDelivery: boolean;
+  priorityService: boolean;
+  birthdayBenefit: {
+    enabled: boolean;
+    discount: number;
+    gift?: string;
+  };
+  doublePointsDays: number[];
+}
+
+// ============================================
+// 租户配置类型 (TenantConfig)
+// ============================================
+
+/** 主题配置 */
+export interface TenantTheme {
+  primary: string;
+  primaryLight: string;
+  primaryDark: string;
+  accent: string;
+  background?: string;
+  text?: string;
+  textMuted?: string;
+  textSecondary?: string;
+  border?: string;
+  success?: string;
+  warning?: string;
+  error?: string;
+  info?: string;
+  blur?: string;
+}
+
+export interface TenantConfig {
+  /** 租户 ID */
+  id: string;
+  /** 品牌名称 */
+  brandName: string;
+  /** 品牌英文名称 */
+  brandNameEn?: string;
+  /** 状态 */
+  status: 'active' | 'inactive' | 'pending';
+  /** 主题配置 */
+  theme: TenantTheme;
+  /** 功能开关 */
+  features: TenantFeatures;
+  /** 业务时间 */
+  businessHours: BusinessHours;
+  /** 预约配置 */
+  booking: {
+    enabled: boolean;
+    mode: BookingMode;
+    rules: string[];
+    seatTypes: SeatType[];
+    maxGuests: number;
+    minAdvanceHours: number;
+    maxAdvanceDays: number;
+    autoConfirm: boolean;
+    requireDeposit?: boolean;
+    depositAmount?: number;
+    timeLimit?: number;
+  };
+  /** bookingConfig 兼容字段 */
+  bookingConfig?: {
+    maxGuests: number;
+    minAdvanceHours: number;
+    maxAdvanceDays: number;
+    autoConfirm: boolean;
+    requireDeposit?: boolean;
+    depositAmount?: number;
+    timeLimit?: number;
+  };
+  /** 外卖配置 */
+  delivery: DeliveryConfig;
+  /** 会员配置 */
+  member: MemberConfig;
+  /** 桌位配置 */
+  tables: {
+    enabled: boolean;
+    seatTypes: SeatType[];
+  };
+  /** 门店配置 */
+  stores: StoresConfig;
+  /** 产品/菜单配置 */
+  product: ProductConfig;
+  payment: PaymentConfig;
+  /** 品牌数据 */
+  brandData?: {
+    videoUrl?: string;
+    tagline?: string;
+    stories?: any[];
+  };
+  /** 数据库连接 (仅创建租户时使用) */
+  dbConnection?: {
+    host: string;
+    port: number;
+    database: string;
+    username: string;
+    password: string;
+  };
+  /** Redis URL */
+  redisUrl?: string;
+  /** 存储桶 */
+  storageBucket?: string;
+  /** 创建时间 */
+  createdAt?: string;
+}
+
+export interface TenantFeatures {
+  booking: boolean;
+  menu: boolean;
+  member: boolean;
+  comments: boolean;
+  delivery: boolean;
+  product: boolean;
+  stores: boolean;
+}
+
+export interface BookingFeatures {
+  enabled: boolean;
+  mode: BookingMode;
+  rules: string[];
+  seatTypes: SeatType[];
+}
+
+/** 租户上下文 */
+export interface TenantContext {
+  config: TenantConfig;
+}
+
+/** 门店基础信息 (对应 stores 表) */
+export interface Store {
+  id: string;
+  tenantId: string;
+  name: string;
+  shortName?: string | null;
+  address: string;
+  phone: string;
+  longitude?: number | null;
+  latitude?: number | null;
+  businessHours?: any;
+  rating: number;
+  ratingCount: number;
+  monthlySales: number;
+  minOrderAmount: number;
+  deliveryFee: number;
+  deliveryDistance: number;
+  packPrice: number;
+  notice?: string | null;
+  qrCode?: string | null;
+  isOpen?: boolean | null;
+  features: any;
+  images?: any;
+  description?: string | null;
+  status?: string | null;
+  sort?: number | null;
+  createdAt?: string | null | Date;
+  updatedAt?: string;
+}
+
+/** 租户 API 响应 */
+export interface TenantApiResponse {
+  success: boolean;
+  tenantId?: string;
+  brandName?: string;
+  brandNameEn?: string;
+  theme?: TenantTheme;
+  features?: TenantFeatures;
+  error?: string;
+}
+
+// ============================================
+// 多门店配置
+// ============================================
+
 export interface StoresConfig {
   /** 是否启用多门店 */
   enabled: boolean;
@@ -89,115 +281,193 @@ export interface StoresConfig {
   crossStoreBooking?: boolean;
 }
 
+/** 门店详情 (返回给前端的完整数据) */
+export interface StoreDetail extends Store {
+  /** 距离(千米) */
+  distance?: number;
+  /** 预计配送时间(分钟) */
+  estimatedDeliveryTime?: number;
+  /** 配送区域 */
+  deliveryAreas?: DeliveryArea[];
+}
+
 // ============================================
-// 会员相关类型
+// 商品规格与SKU
 // ============================================
 
-/** 会员等级 */
-export interface MemberLevel {
+/** 商品规格选项 */
+export interface ProductSpecOption {
   id: string;
   name: string;
-  /** 等级数值 */
-  level: number;
-  /** 等级图标 */
+  price: number;       // 加价(可正可负)
+  stock: number;
+}
+
+/** 商品规格组 */
+export interface ProductSpecGroup {
+  id: string;
+  name: string;
+  options: ProductSpecOption[];
+}
+
+/** SKU条目 */
+export interface ProductSKU {
+  id: string;
+  name: string;            // SKU名称 "大杯/加辣"
+  price: number;           // 规格加价
+  stock: number;
+  specIds: string[];       // 规格ID组合
+}
+
+// ============================================
+// 周边商品类型
+// ============================================
+
+/** 商品分类 */
+export interface ProductCategory {
+  id: string;
+  name: string;
+  /** 分类图标 */
   icon?: string;
-  /** 积分倍率 */
-  pointsRate: number;
-  /** 折扣 (0-1) */
-  discount: number;
-  /** 升级所需积分 */
-  upgradePoints: number;
-  /** 等级描述 */
+  /** 分类图片 */
+  image?: string;
+  /** 分类描述 */
   description?: string;
-}
-
-/** 会员权益 */
-export interface MemberBenefit {
-  /** 折扣 */
-  discount?: number;
-  /** 免配送费 */
-  freeDelivery?: boolean;
-  /** 专属客服 */
-  priorityService?: boolean;
-  /** 生日优惠 */
-  birthdayBenefit?: {
-    enabled: boolean;
-    discount: number;
-    gift?: string;
-  };
-  /** 积分加倍日期 */
-  doublePointsDays?: number[]; // 周几 (0-6)
-}
-
-/** 会员配置 */
-export interface MemberConfig {
-  /** 是否启用会员功能 */
+  /** 父分类ID (支持多级) */
+  parentId?: string;
+  /** 排序 */
+  sort: number;
+  /** 是否启用 */
   enabled: boolean;
-  /** 会员等级配置 */
-  levels: MemberLevel[];
-  /** 积分名称 */
-  pointsName: string;
-  /** 签到积分 */
-  signInPoints: number;
-  /** 消费积分比例 (消费1元获得多少积分) */
-  consumePointsRate: number;
-  /** 积分抵扣比例 (多少积分抵扣1元) */
-  pointsDeductionRate: number;
-  /** 积分有效期 (天) */
-  pointsExpireDays: number;
-  /** 会员权益 */
-  benefits: MemberBenefit;
-  /** 最低抵扣积分 */
-  minDeductionPoints: number;
-  /** 最高抵扣比例 */
-  maxDeductionRate: number;
 }
 
-/** 会员信息 */
-export interface Member {
+/** 商品 */
+export interface Product {
   id: string;
-  tenantId: string;
-  /** 手机号 */
-  phone: string;
-  /** 用户名 (可选) */
-  username?: string;
-  /** 昵称 */
-  nickname?: string;
-  /** 头像 */
-  avatar?: string;
-  /** 会员等级ID */
-  levelId: string;
-  /** 当前积分 */
-  points: number;
-  /** 历史累计积分 */
-  totalPoints: number;
-  /** 余额 */
-  balance: number;
-  /** 会员状态 */
-  status: 'active' | 'frozen' | 'cancelled';
-  /** 注册时间 */
-  createdAt: string;
-  /** 最后消费时间 */
-  lastConsumeAt?: string;
-  /** 生日 */
-  birthday?: string;
+  categoryId: string;
+  name: string;
+  /** 副标题/卖点 */
+  subtitle?: string | null;
+  /** 商品描述 (富文本) */
+  description?: string | null;
+  /** 图片列表 */
+  images?: string[] | unknown;
+  /** 视频URL */
+  videoUrl?: string | null;
+  /** 价格 */
+  price: number;
+  /** 原价/划线价 */
+  originalPrice?: number | null;
+  /** 库存 */
+  stock?: number | null;
+  /** 单位 */
+  unit?: string | null;
+  /** 规格组 */
+  specs?: ProductSpecGroup[] | unknown;
+  /** 营销标签 */
+  tags?: string[] | unknown;
+  /** 是否推荐 */
+  isRecommend?: boolean | null;
+  /** 是否新品 */
+  isNew?: boolean | null;
+  /** 是否热销 */
+  isHot?: boolean | null;
+  /** 排序 */
+  sort?: number | null;
+  /** 状态 */
+  status?: 'active' | 'inactive' | 'offline' | null;
+  /** 销量 */
+  soldCount?: number | null;
+  /** 评分 */
+  rating?: number | null;
+  /** 评价数 */
+  ratingCount?: number | null;
+  /** 创建时间 */
+  createdAt?: string | Date | null;
+  /** 更新时间 */
+  updatedAt?: string | Date | null;
 }
 
-/** 会员积分记录 */
-export interface PointsRecord {
+/** 商品详情 (返回给前端的完整数据) */
+export interface ProductDetail extends Product {
+  /** SKU列表 */
+  skus?: ProductSKU[];
+  /** 同类推荐 */
+  recommends?: Product[];
+}
+
+/** 周边商品配置 */
+export interface ProductConfig {
+  /** 是否启用周边商品 */
+  enabled: boolean;
+  /** 商品分类 */
+  categories: ProductCategory[];
+  /** 是否支持配送 */
+  deliverySupported: boolean;
+  /** 是否支持自提 */
+  pickupSupported: boolean;
+}
+
+/** 支付配置 (租户级别) - 使用 payment/types 的 TenantPaymentConfig */
+export type PaymentConfig = import('../payment/types').TenantPaymentConfig;
+
+// ============================================
+// 堂食菜单类型
+// ============================================
+
+/** 菜单分类 */
+export interface MenuCategory {
   id: string;
-  memberId: string;
-  /** 积分变化 (正数增加, 负数扣减) */
-  points: number;
-  /** 剩余积分 */
-  balance: number;
-  /** 类型 */
-  type: 'consume' | 'signin' | 'refund' | 'admin' | 'expire' | 'upgrade' | 'gift';
+  name: string;
+  icon?: string;
+  image?: string;
+  description?: string;
+  sort: number;
+  enabled: boolean;
+  /** 子分类 */
+  children?: MenuCategory[];
+}
+
+/** 堂食菜品 */
+export interface MenuItem {
+  id: string;
+  categoryId?: string;
+  name: string;
+  /** 副标题 */
+  subtitle?: string;
+  price: number;
+  /** 原价 */
+  originalPrice?: number;
   /** 描述 */
-  description: string;
-  /** 关联订单ID */
-  orderId?: string;
+  description?: string;
+  /** 标签 */
+  tags: string[];
+  /** 图片 */
+  imageUrl?: string;
+  /** 多图 */
+  images?: string[];
+  /** 是否推荐 */
+  isRecommend: boolean;
+  /** 是否新品 */
+  isNew: boolean;
+  /** 是否热销 */
+  isHot: boolean;
+  /** 可用 */
+  available: boolean;
+  /** 销量 */
+  soldCount: number;
+  /** 评分 */
+  rating: number;
+  /** 排序 */
+  sort: number;
+  /** 创建时间 */
   createdAt: string;
+}
+
+/** 堂食菜单配置 */
+export interface MenuConfig {
+  enabled: boolean;
+  categories: MenuCategory[];
 }
 
 // ============================================
@@ -266,66 +536,38 @@ export interface DeliveryConfig {
   codEnabled?: boolean;
 }
 
-// ============================================
-// 周边商品类型
-// ============================================
-
-/** 商品分类 */
-export interface ProductCategory {
+/** 外卖菜品 */
+export interface DeliveryItem {
   id: string;
   name: string;
-  /** 分类图标 */
-  icon?: string;
-  /** 排序 */
-  sort: number;
-  /** 是否启用 */
-  enabled: boolean;
-}
-
-/** 商品规格 */
-export interface ProductSpec {
-  id: string;
-  name: string;
-  options: { value: string; price: number }[];
-}
-
-/** 商品 */
-export interface Product {
-  id: string;
-  categoryId: string;
-  name: string;
-  /** 商品描述 */
+  /** 副标题 */
+  subtitle?: string;
+  /** 描述 (富文本) */
   description?: string;
-  /** 图片 */
-  images: string[];
-  /** 价格 */
   price: number;
   /** 原价 */
   originalPrice?: number;
-  /** 库存 */
+  /** 主图 */
+  image: string;
+  /** 多图 */
+  images?: string[];
+  category: string;
+  available: boolean;
   stock: number;
-  /** 单位 */
-  unit?: string;
-  /** 规格 */
-  specs?: ProductSpec[];
-  /** 状态 */
-  status: 'active' | 'inactive' | 'offline';
-  /** 排序 */
-  sort: number;
+  /** 标签 */
+  tags: string[];
+  /** 规格选项 */
+  specs?: ProductSpecGroup[];
+  /** 是否推荐 */
+  isRecommend: boolean;
+  /** 是否新品 */
+  isNew: boolean;
+  /** 月销量 */
+  soldCount: number;
+  /** 评分 */
+  rating: number;
   /** 创建时间 */
   createdAt: string;
-}
-
-/** 周边商品配置 */
-export interface ProductConfig {
-  /** 是否启用周边商品 */
-  enabled: boolean;
-  /** 商品分类 */
-  categories: ProductCategory[];
-  /** 是否支持配送 */
-  deliverySupported: boolean;
-  /** 是否支持自提 */
-  pickupSupported: boolean;
 }
 
 // ============================================
@@ -394,15 +636,15 @@ export interface Order {
   pointsUsed?: number;
   /** 积分抵扣金额 */
   pointsAmount?: number;
-  /** 订单金额 */
+  /** 实付金额 */
   total: number;
   /** 实付金额 */
   paidAmount?: number;
   /** 支付方式 */
-  paymentMethod?: 'wechat' | 'alipay' | 'balance' | 'cod';
+  paymentMethod?: string;
   /** 支付时间 */
   paidAt?: string;
-  /** 预订信息 (booking类型) */
+  /** 预订信息 */
   bookingInfo?: {
     date: string;
     time: string;
@@ -411,15 +653,12 @@ export interface Order {
     tableName?: string;
     verifyCode?: string;
   };
-  /** 配送信息 (delivery类型) */
+  /** 配送信息 */
   deliveryInfo?: {
     address: string;
     contactName: string;
     contactPhone: string;
-    estimatedTime?: string;
-    actualTime?: string;
-    riderName?: string;
-    riderPhone?: string;
+    distance?: number;
   };
   /** 备注 */
   remarks?: string;
@@ -429,157 +668,4 @@ export interface Order {
   updatedAt: string;
   /** 完成时间 */
   completedAt?: string;
-}
-
-// ============================================
-// 购物车类型
-// ============================================
-
-/** 购物车项 */
-export interface CartItem {
-  id: string;
-  productId: string;
-  productName: string;
-  productImage?: string;
-  spec?: string;
-  price: number;
-  quantity: number;
-  /** 库存 */
-  stock: number;
-}
-
-/** 购物车 */
-export interface Cart {
-  tenantId: string;
-  memberId?: string;
-  items: CartItem[];
-  /** 总数 */
-  totalQuantity: number;
-  /** 总金额 */
-  totalAmount: number;
-}
-
-// ============================================
-// 租户配置主类型
-// ============================================
-
-export interface TenantTheme {
-  /** 主色调 */
-  primary: string;
-  primaryLight: string;
-  primaryDark: string;
-  /** 强调色 */
-  accent: string;
-  /** 背景色 */
-  background: string;
-  /** 文字颜色 */
-  text: string;
-  textMuted: string;
-  textSecondary: string;
-  /** 边框色 */
-  border: string;
-  /** 功能色 */
-  success: string;
-  warning: string;
-  error: string;
-  info: string;
-  /** 模糊效果 */
-  blur: string;
-}
-
-export interface BookingFeatures {
-  /** 预约模式: RULES (规则预约) | SEATING (在线订座) */
-  mode: BookingMode;
-  /** 启用预约功能 */
-  enabled: boolean;
-  /** 预约规则说明 */
-  rules: string[];
-  /** 桌位类型列表 */
-  seatTypes: SeatType[];
-}
-
-/** 功能开关 */
-export interface TenantFeatures {
-  booking: boolean;
-  menu: boolean;
-  member: boolean;
-  comments: boolean;
-  delivery: boolean;
-  product: boolean;
-  stores: boolean;
-}
-
-/** 预约配置 */
-export interface BookingConfig {
-  maxGuests: number;
-  minAdvanceHours: number;
-  maxAdvanceDays: number;
-  autoConfirm: boolean;
-  requireDeposit?: boolean;
-  depositAmount?: number;
-  timeLimit?: number;
-}
-
-/** 租户配置 */
-export interface TenantConfig {
-  /** 租户唯一标识 */
-  id: string;
-  /** 品牌名称 */
-  brandName: string;
-  /** 品牌英文名 */
-  brandNameEn: string;
-  /** 数据库连接字符串 */
-  dbConnection: string;
-  /** Redis 连接字符串 */
-  redisUrl: string;
-  /** S3/OSS 存储桶名称 */
-  storageBucket: string;
-  /** 主题配置 */
-  theme: TenantTheme;
-  /** 功能开关 */
-  features: TenantFeatures;
-  /** 预约功能配置 */
-  booking: BookingFeatures;
-  /** 营业时间 */
-  businessHours: BusinessHours;
-  /** 预约配置 */
-  bookingConfig: BookingConfig;
-  /** 多门店配置 */
-  stores: StoresConfig;
-  /** 会员配置 */
-  member: MemberConfig;
-  /** 外卖配置 */
-  delivery: DeliveryConfig;
-  /** 周边商品配置 */
-  product: ProductConfig;
-  /** 创建时间 */
-  createdAt: string;
-  /** 状态 */
-  status: 'active' | 'suspended' | 'inactive';
-}
-
-/** 租户运行时上下文 */
-export interface TenantContext {
-  /** 当前租户配置 */
-  config: TenantConfig;
-  /** 数据库实例 */
-  db?: any;
-  /** Redis 实例 */
-  redis?: any;
-}
-
-/** API 响应中的租户信息 */
-export interface TenantApiResponse {
-  tenantId: string;
-  brandName: string;
-  brandNameEn: string;
-  theme: TenantTheme;
-}
-
-/** 创建新租户请求 */
-export interface CreateTenantRequest {
-  id: string;
-  brandName: string;
-  brandNameEn?: string;
-  theme?: Partial<TenantTheme>;
 }
