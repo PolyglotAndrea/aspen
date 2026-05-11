@@ -20,6 +20,10 @@ import { staticPlugin } from '@elysiajs/static';
 import { tenantPlugin, tenantManagementRoutes } from './middleware/tenant';
 // 认证中间件
 import { authPlugin } from './middleware/auth';
+// 插件系统
+import { pluginMiddleware, pluginRegistry } from './plugins';
+// 示例插件
+import { requestLoggingPlugin, tenantMetricsPlugin } from './plugins/example';
 
 // 业务路由
 import { brandRoutes } from './routes/brand';
@@ -28,8 +32,9 @@ import { paymentRoutes } from './routes/payment';
 
 // 模块化路由
 import { bookingRoutes } from './modules/booking';
-import { orderRoutes } from './modules/order';
+import { orderRoutesModule } from './modules/order';
 import { memberRoutes, adminMemberRoutes } from './modules/member';
+import { adminAuthRoutes } from './modules/admin';
 import { deliveryRoutes } from './modules/delivery';
 import { productRoutes } from './modules/product';
 
@@ -42,9 +47,11 @@ const app = new Elysia()
   .use(cors())
   .use(swagger({
     documentation: {
-      title: 'Aspen Multi-Tenant API',
-      version: '3.0.0',
-      description: '多租户餐饮品牌 API - 支持预订、会员、外卖、周边商品、支付集成',
+      info: {
+        title: 'Aspen Multi-Tenant API',
+        version: '3.0.0',
+        description: '多租户餐饮品牌 API - 支持预订、会员、外卖、周边商品、支付集成',
+      },
       servers: [
         { url: 'http://localhost:3000', description: '本地开发' },
       ],
@@ -73,6 +80,9 @@ const app = new Elysia()
   // ==================== 认证中间件 ====================
   .use(authPlugin)
 
+  // ==================== 插件系统 ====================
+  .use(pluginMiddleware())
+
   // ==================== 业务路由 ====================
   .group('/api/v1', (app) =>
     app
@@ -83,7 +93,7 @@ const app = new Elysia()
       // 预订路由
       .use(bookingRoutes)
       // 统一订单路由
-      .use(orderRoutes)
+      .use(orderRoutesModule)
       // 会员路由
       .use(memberRoutes)
       // 外卖路由
@@ -92,13 +102,16 @@ const app = new Elysia()
       .use(productRoutes)
       // Admin 会员管理路由
       .use(adminMemberRoutes)
+      // Admin 认证路由
+      .use(adminAuthRoutes)
       // 支付路由
       .use(paymentRoutes)
   )
 
   // ==================== 错误处理 ====================
   .onError(({ error, code, set }) => {
-    console.error(`[Error] ${code}:`, error.message);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error(`[Error] ${code}:`, errMsg);
 
     if (code === 'NOT_FOUND') {
       set.status = 404;
@@ -107,15 +120,25 @@ const app = new Elysia()
 
     if (code === 'VALIDATION') {
       set.status = 400;
-      return { success: false, error: '参数验证失败', message: error.message };
+      return { success: false, error: '参数验证失败', message: errMsg };
     }
 
     set.status = 500;
-    return { success: false, error: '服务器错误', message: error.message };
+    return { success: false, error: '服务器错误', message: errMsg };
   })
 
   // ==================== 启动服务 ====================
   .listen(PORT);
+
+// 注册示例插件
+pluginRegistry.register(requestLoggingPlugin, { enabled: true, priority: 10 });
+pluginRegistry.register(tenantMetricsPlugin, { enabled: true, priority: 5 });
+
+// 异步启动插件
+(async () => {
+  await pluginRegistry.startAll();
+  console.log('[Plugin] All plugins started');
+})().catch(console.error);
 
 // 启动信息
 console.log(`
@@ -144,12 +167,9 @@ console.log(`
 ║    • ocean   (深海 - 简单预订)                             ║
 ║    • gold    (金阁 - 高端餐饮)                             ║
 ║                                                            ║
-║  测试会员登录:                                              ║
-║    curl -X POST http://localhost:${PORT}/api/v1/member/login/phone \\\\
-║      -H "Content-Type: application/json" \\\\
-║      -d '{"phone":"13800000000"}'
+║  💡 提示:                                                  ║
+║    - 使用 x-tenant-id header 指定租户                      ║
+║    - 管理后台需要 x-admin-key header                       ║
 ║                                                            ║
 ╚════════════════════════════════════════════════════════════╝
 `);
-
-export type App = typeof app;
