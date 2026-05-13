@@ -5,7 +5,7 @@
 
 import { Elysia, t } from 'elysia';
 import { db } from '../../db';
-import { admins, tenants } from '../../db/schema';
+import { admins, tenants, orders, members, transactions } from '../../db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { signToken, verifyToken, type JWTPayload } from '../../auth/jwt';
 import { verifyPassword } from '../../auth/password';
@@ -118,13 +118,52 @@ export const adminAuthRoutes = new Elysia({ prefix: '/admin' })
     const payload = await verifyToken(authHeader.slice(7));
     if (payload.role !== 'super_admin') throw new Error('需要超管权限');
 
-    const allTenants = getActiveTenants();
-    const adminCount = await db.select({ count: sql<number>`count(*)` }).from(admins);
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [[orderStats], [memberStats], [txStats]] = await Promise.all([
+      db.select({
+        totalOrders: sql<number>`count(*)`,
+        totalRevenue: sql<number>`coalesce(sum(${orders.total}), 0)`,
+        todayOrders: sql<number>`count(*) filter (where ${orders.createdAt} >= ${startOfToday})`,
+        todayRevenue: sql<number>`coalesce(sum(${orders.total}) filter (where ${orders.createdAt} >= ${startOfToday}), 0)`,
+        monthOrders: sql<number>`count(*) filter (where ${orders.createdAt} >= ${startOfThisMonth})`,
+        monthRevenue: sql<number>`coalesce(sum(${orders.total}) filter (where ${orders.createdAt} >= ${startOfThisMonth}), 0)`,
+      }).from(orders),
+      db.select({
+        totalMembers: sql<number>`count(*)`,
+        newMembersToday: sql<number>`count(*) filter (where ${members.createdAt} >= ${startOfToday})`,
+        newMembersMonth: sql<number>`count(*) filter (where ${members.createdAt} >= ${startOfThisMonth})`,
+      }).from(members),
+      db.select({
+        totalTx: sql<number>`count(*)`,
+        successTx: sql<number>`count(*) filter (where ${transactions.status} = 'success')`,
+        successAmount: sql<number>`coalesce(sum(${transactions.amount}) filter (where ${transactions.status} = 'success'), 0)`,
+      }).from(transactions),
+    ]);
+
+    const tenantRows = await db.select({ id: tenants.id, brandName: tenants.brandName, brandNameEn: tenants.brandNameEn, status: tenants.status, features: tenants.config }).from(tenants);
 
     return {
-      tenantCount: allTenants.length,
-      adminCount: Number(adminCount[0]?.count || 0),
-      tenants: allTenants.map(t => ({
+      tenantCount: tenantRows.length,
+      adminCount: 0,
+      stats: {
+        totalOrders: Number(orderStats?.totalOrders || 0),
+        totalRevenue: Number(orderStats?.totalRevenue || 0),
+        todayOrders: Number(orderStats?.todayOrders || 0),
+        todayRevenue: Number(orderStats?.todayRevenue || 0),
+        monthOrders: Number(orderStats?.monthOrders || 0),
+        monthRevenue: Number(orderStats?.monthRevenue || 0),
+        totalMembers: Number(memberStats?.totalMembers || 0),
+        newMembersToday: Number(memberStats?.newMembersToday || 0),
+        newMembersMonth: Number(memberStats?.newMembersMonth || 0),
+        totalTransactions: Number(txStats?.totalTx || 0),
+        successTransactions: Number(txStats?.successTx || 0),
+        totalVolume: Number(txStats?.successAmount || 0),
+      },
+      tenants: tenantRows.map(t => ({
         id: t.id,
         brandName: t.brandName,
         brandNameEn: t.brandNameEn,
@@ -183,17 +222,49 @@ export const adminAuthRoutes = new Elysia({ prefix: '/admin' })
     const config = getTenantConfig(id);
     if (!config) throw new Error('租户不存在');
 
-    // TODO: 从数据库查询实际统计数据
-    // 暂时返回模拟数据，后续完善
+    const tenantId = id;
+    const now = new Date();
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [orderStats, memberStats, memberGrowth] = await Promise.all([
+      db.select({
+        totalOrders: sql<number>`count(*)`,
+        totalRevenue: sql<number>`coalesce(sum(${orders.total}), 0)`,
+        todayOrders: sql<number>`count(*) filter (where ${orders.createdAt} >= ${startOfToday})`,
+        todayRevenue: sql<number>`coalesce(sum(${orders.total}) filter (where ${orders.createdAt} >= ${startOfToday}), 0)`,
+        monthOrders: sql<number>`count(*) filter (where ${orders.createdAt} >= ${startOfThisMonth})`,
+        monthRevenue: sql<number>`coalesce(sum(${orders.total}) filter (where ${orders.createdAt} >= ${startOfThisMonth}), 0)`,
+      }).from(orders).where(eq(orders.tenantId, tenantId)),
+      db.select({
+        totalMembers: sql<number>`count(*)`,
+        newMembersToday: sql<number>`count(*) filter (where ${members.createdAt} >= ${startOfToday})`,
+        newMembersMonth: sql<number>`count(*) filter (where ${members.createdAt} >= ${startOfThisMonth})`,
+        activeMembers: sql<number>`count(*) filter (where ${members.status} = 'active')`,
+      }).from(members).where(eq(members.tenantId, tenantId)),
+      db.select({
+        newMembers7d: sql<number>`count(*) filter (where ${members.createdAt} >= ${new Date(now.getTime() - 7 * 86400000)})`,
+        newMembers30d: sql<number>`count(*) filter (where ${members.createdAt} >= ${new Date(now.getFullYear(), now.getMonth() - 1, 1)})`,
+      }).from(members).where(eq(members.tenantId, tenantId)),
+    ]);
+
     return {
-      tenantId: id,
+      tenantId,
       brandName: config.brandName,
       stats: {
-        totalOrders: 0,
-        totalMembers: 0,
-        totalRevenue: 0,
-        todayOrders: 0,
-        todayRevenue: 0,
+        totalOrders: Number(orderStats[0]?.totalOrders || 0),
+        totalMembers: Number(memberStats[0]?.totalMembers || 0),
+        totalRevenue: Number(orderStats[0]?.totalRevenue || 0),
+        todayOrders: Number(orderStats[0]?.todayOrders || 0),
+        todayRevenue: Number(orderStats[0]?.todayRevenue || 0),
+        monthOrders: Number(orderStats[0]?.monthOrders || 0),
+        monthRevenue: Number(orderStats[0]?.monthRevenue || 0),
+        activeMembers: Number(memberStats[0]?.activeMembers || 0),
+        newMembersToday: Number(memberStats[0]?.newMembersToday || 0),
+        newMembersMonth: Number(memberStats[0]?.newMembersMonth || 0),
+        memberGrowth7d: Number(memberGrowth[0]?.newMembers7d || 0),
+        memberGrowth30d: Number(memberGrowth[0]?.newMembers30d || 0),
       },
     };
   });

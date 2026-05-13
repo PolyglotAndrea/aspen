@@ -142,7 +142,7 @@ test_api() {
   fi
 
   echo -n "  预约配置: "
-  if curl -s http://localhost:3000/api/v1/bookings/config -H "x-tenant-id: volcano" | grep -q "mode"; then
+  if curl -s http://localhost:3000/api/v1/bookings/config -H "x-tenant-id: aspen" | grep -q "mode"; then
     echo -e "${GREEN}✓ 通过${NC}"
   else
     echo -e "${RED}✗ 失败${NC}"

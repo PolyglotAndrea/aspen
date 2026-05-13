@@ -114,26 +114,26 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
 
   // 微信支付回调
   .post('/notify/wechat', async ({ headers, body }) => {
-    const config = getTenantConfig('aspen'); // 从回调中解析 tenantId
-    const channel = getPaymentChannel('wechat', config?.payment);
-
-    const event = await channel.verifyWebhook(headers as Record<string, string>, typeof body === 'string' ? body : JSON.stringify(body));
+    const rawBody = typeof body === 'string' ? body : JSON.stringify(body);
+    const channel = getPaymentChannel('wechat');
+    const event = await channel.verifyWebhook(headers as Record<string, string>, rawBody);
 
     if (!event) {
       return { code: 'FAIL', message: '验证失败' };
     }
 
     if (event.eventType === 'payment.success') {
-      const tx = await transactionRepo.findByTransactionNo('aspen', event.transactionNo);
+      const tx = await transactionRepo.findByTransactionNoAnyTenant(event.transactionNo);
       if (tx) {
-        await transactionRepo.update('aspen', tx.id, { status: 'success' });
-        await orderRepo.update('aspen', tx.orderId, { status: 'paid' } as any);
+        const { tenantId } = tx;
+        await transactionRepo.update(tenantId, tx.id, { status: 'success' });
+        await orderRepo.update(tenantId, tx.orderId, { status: 'paid' } as any);
 
         // 自动分账
-        const tenantConfig = getTenantConfig('aspen');
+        const tenantConfig = getTenantConfig(tenantId);
         const profitConfig = (tenantConfig?.payment as any)?.profitSharing;
         if (profitConfig?.enabled) {
-          await createSharingOrder('aspen', tx.orderId, tx.id, 'wechat', event.amount || 0, profitConfig);
+          await createSharingOrder(tenantId, tx.orderId, tx.id, 'wechat', event.amount || 0, profitConfig);
         }
       }
     }
@@ -142,22 +142,19 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
   })
 
   // 支付宝回调
-  .post('/notify/alipay', async ({ headers, body }) => {
-    const config = getTenantConfig('aspen');
+.post('/notify/alipay', async ({ headers, body }) => {
+    const tx = await transactionRepo.findByTransactionNoAnyTenant((body as any)?.transactionNo || '');
+    const config = tx ? getTenantConfig(tx.tenantId) : null;
     const channel = getPaymentChannel('alipay', config?.payment);
-
     const event = await channel.verifyWebhook(headers as Record<string, string>, typeof body === 'string' ? body : JSON.stringify(body));
 
     if (!event) {
       return 'failure';
     }
 
-    if (event.eventType === 'payment.success') {
-      const tx = await transactionRepo.findByTransactionNo('aspen', event.transactionNo);
-      if (tx) {
-        await transactionRepo.update('aspen', tx.id, { status: 'success' });
-        await orderRepo.update('aspen', tx.orderId, { status: 'paid' } as any);
-      }
+    if (event.eventType === 'payment.success' && tx) {
+      await transactionRepo.update(tx.tenantId, tx.id, { status: 'success' });
+      await orderRepo.update(tx.tenantId, tx.orderId, { status: 'paid' } as any);
     }
 
     return 'success';
@@ -165,20 +162,20 @@ export const paymentRoutes = new Elysia({ prefix: '/payment' })
 
   // 银联回调
   .post('/notify/unionpay', async ({ headers, body }) => {
-    const config = getTenantConfig('aspen');
-    const channel = getPaymentChannel('unionpay', config?.payment);
-
-    const event = await channel.verifyWebhook(headers as Record<string, string>, typeof body === 'string' ? body : JSON.stringify(body));
+    const rawBody = typeof body === 'string' ? body : JSON.stringify(body);
+    const channel = getPaymentChannel('unionpay');
+    const event = await channel.verifyWebhook(headers as Record<string, string>, rawBody);
 
     if (!event) {
       return { respCode: '99', respMsg: '验证失败' };
     }
 
     if (event.eventType === 'payment.success') {
-      const tx = await transactionRepo.findByTransactionNo('aspen', event.transactionNo);
+      const tx = await transactionRepo.findByTransactionNoAnyTenant(event.transactionNo);
       if (tx) {
-        await transactionRepo.update('aspen', tx.id, { status: 'success' });
-        await orderRepo.update('aspen', tx.orderId, { status: 'paid' } as any);
+        const { tenantId } = tx;
+        await transactionRepo.update(tenantId, tx.id, { status: 'success' });
+        await orderRepo.update(tenantId, tx.orderId, { status: 'paid' } as any);
       }
     }
 

@@ -33,21 +33,13 @@ export async function apiFetch<T = any>(
   options: RequestInit = {}
 ): Promise<T> {
   const tenantId = getCurrentTenantId();
-  const memberId = getCurrentMemberId();
   const adminToken = localStorage.getItem('admin_token');
-
-  const adminKey = import.meta.env.VITE_ADMIN_KEY || 'dev-admin-key-change-in-production';
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-tenant-id': tenantId,
-    'x-admin-key': adminKey,
     ...(options.headers as Record<string, string> || {}),
   };
-
-  if (memberId) {
-    headers['x-member-id'] = memberId;
-  }
 
   if (adminToken) {
     headers['Authorization'] = `Bearer ${adminToken}`;

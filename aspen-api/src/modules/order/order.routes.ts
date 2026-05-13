@@ -28,9 +28,12 @@ export const orderRoutes = new Elysia({ prefix: '/orders' })
   })
 
   // 创建订单
-  .post('/', async ({ body, headers }) => {
+  .post('/', async ({ body, headers, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string;
+    const memberId = auth?.memberId;
+    if (!memberId) {
+      throw new Error('未登录');
+    }
     const config = getTenantConfig(tenantId);
 
     const {
@@ -183,9 +186,12 @@ export const orderRoutes = new Elysia({ prefix: '/orders' })
   })
 
   // 获取订单列表
-  .get('/', async ({ headers, query }) => {
+  .get('/', async ({ headers, query, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string;
+    const memberId = auth?.memberId;
+    if (!memberId) {
+      throw new Error('未登录');
+    }
 
     const page = parseInt(query.page as string) || 1;
     const pageSize = parseInt(query.pageSize as string) || 20;
@@ -197,9 +203,7 @@ export const orderRoutes = new Elysia({ prefix: '/orders' })
     if (query.status && query.status !== 'all') {
       filters.status = query.status;
     }
-    if (memberId) {
-      filters.memberId = memberId;
-    }
+    filters.memberId = memberId;
     if (query.storeId) {
       filters.storeId = query.storeId;
     }

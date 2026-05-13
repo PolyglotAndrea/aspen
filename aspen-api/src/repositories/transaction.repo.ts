@@ -22,6 +22,11 @@ export const transactionRepo = {
     return rows[0] || null;
   },
 
+  async findByTransactionNoAnyTenant(transactionNo: string) {
+    const rows = await db.select().from(transactions).where(eq(transactions.transactionNo, transactionNo)).limit(1);
+    return rows[0] || null;
+  },
+
   async findByTenant(tenantId: string, params?: { orderId?: string; channel?: string; status?: string; page?: number; pageSize?: number }) {
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 50;

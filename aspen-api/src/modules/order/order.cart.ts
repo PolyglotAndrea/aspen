@@ -19,9 +19,12 @@ function calcCartSummary(items: any[]) {
 export const cartRoutes = new Elysia({ prefix: '/orders' })
 
   // 获取购物车
-  .get('/cart', async ({ headers }) => {
+  .get('/cart', async ({ headers, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string || 'guest';
+    const memberId = auth?.memberId;
+    if (!memberId) {
+      throw new Error('未登录');
+    }
 
     const items = await cartRepo.findByMember(tenantId, memberId);
     const { totalQuantity, totalAmount } = calcCartSummary(items);
@@ -30,9 +33,12 @@ export const cartRoutes = new Elysia({ prefix: '/orders' })
   })
 
   // 加入购物车
-  .post('/cart', async ({ body, headers }) => {
+  .post('/cart', async ({ body, headers, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string || 'guest';
+    const memberId = auth?.memberId;
+    if (!memberId) {
+      throw new Error('未登录');
+    }
 
     const { productId, productName, productImage, spec, price, quantity, stock } = body as any;
 
@@ -69,9 +75,12 @@ export const cartRoutes = new Elysia({ prefix: '/orders' })
   })
 
   // 更新购物车项数量
-  .patch('/cart/:productId', async ({ params: { productId }, body, headers }) => {
+  .patch('/cart/:productId', async ({ params: { productId }, body, headers, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string || 'guest';
+    const memberId = auth?.memberId;
+    if (!memberId) {
+      throw new Error('未登录');
+    }
 
     const { quantity, spec } = body as any;
 
@@ -87,9 +96,12 @@ export const cartRoutes = new Elysia({ prefix: '/orders' })
   })
 
   // 清空购物车
-  .delete('/cart', async ({ headers }) => {
+  .delete('/cart', async ({ headers, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string || 'guest';
+    const memberId = auth?.memberId;
+    if (!memberId) {
+      throw new Error('未登录');
+    }
 
     await cartRepo.clear(tenantId, memberId);
 

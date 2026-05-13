@@ -67,17 +67,19 @@ export function tenantPlugin(options: TenantPluginOptions = {}) {
 
   return (app: Elysia) =>
     app
-      .derive(async ({ headers }) => {
+      .derive(async ({ headers, path }) => {
+        if (path === '/health' || path.startsWith('/swagger') || path.startsWith('/tenants')) {
+          return { tenant: null };
+        }
+
         const ctx = await getTenantContext(headers as Record<string, string>, pluginOptions);
         return { tenant: ctx };
       })
       .onBeforeHandle(({ tenant, set, headers, path }) => {
-        // 跳过健康检查和 Swagger 路由
         if (path === '/health' || path.startsWith('/swagger') || path.startsWith('/tenants')) {
           return;
         }
 
-        // 检查租户上下文是否存在
         if (!tenant || !tenant.config) {
           const tenantId = headers['x-tenant-id'] || 'aspen';
           const config = getTenantConfig(tenantId);

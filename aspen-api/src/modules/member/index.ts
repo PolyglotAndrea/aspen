@@ -8,6 +8,7 @@
  */
 
 import { Elysia, t } from 'elysia';
+import { verifyToken } from '../../auth/jwt';
 import type { MemberConfig, MemberLevel as MemberLevelType } from '../../config/tenant.types';
 import { getTenantConfig } from '../../config/tenant.registry';
 import { memberRepo } from '../../repositories/member.repo';
@@ -297,9 +298,9 @@ export const memberRoutes = new Elysia({ prefix: '/member' })
   })
 
   // 获取会员信息
-  .get('/profile', async ({ headers }) => {
+  .get('/profile', async ({ headers, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string;
+    const memberId = auth?.memberId || headers['x-member-id'];
 
     if (!memberId) {
       throw new Error('未登录');
@@ -334,9 +335,9 @@ export const memberRoutes = new Elysia({ prefix: '/member' })
   })
 
   // 更新会员信息
-  .patch('/profile', async ({ body, headers }) => {
+  .patch('/profile', async ({ body, headers, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string;
+    const memberId = auth?.memberId;
 
     if (!memberId) {
       throw new Error('未登录');
@@ -379,9 +380,9 @@ export const memberRoutes = new Elysia({ prefix: '/member' })
   })
 
   // 获取积分明细
-  .get('/points', async ({ headers, query }) => {
+  .get('/points', async ({ headers, query, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string;
+    const memberId = auth?.memberId || headers['x-member-id'] as string;
 
     if (!memberId) {
       throw new Error('未登录');
@@ -403,9 +404,9 @@ export const memberRoutes = new Elysia({ prefix: '/member' })
   })
 
   // 签到
-  .post('/points/signin', async ({ headers }) => {
+  .post('/points/signin', async ({ headers, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string;
+    const memberId = auth?.memberId || headers['x-member-id'] as string;
     const config = getTenantConfig(tenantId);
 
     if (!memberId) {
@@ -486,9 +487,9 @@ export const memberRoutes = new Elysia({ prefix: '/member' })
   })
 
   // 使用积分
-  .post('/points/use', async ({ body, headers }) => {
+  .post('/points/use', async ({ body, headers, auth }: any) => {
     const tenantId = headers['x-tenant-id'] || 'aspen';
-    const memberId = headers['x-member-id'] as string;
+    const memberId = auth?.memberId;
     const config = getTenantConfig(tenantId);
 
     if (!memberId) {
@@ -618,10 +619,25 @@ export const memberRoutes = new Elysia({ prefix: '/member' })
 // ============================================
 
 export const adminMemberRoutes = new Elysia({ prefix: '/admin/members' })
+  .derive(async ({ headers }) => {
+    const authHeader = headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return { adminAuth: null };
+    }
+    try {
+      const payload = await verifyToken(authHeader.slice(7));
+      return { adminAuth: payload };
+    } catch {
+      return { adminAuth: null };
+    }
+  })
 
   // 列表 (分页 + 搜索)
-  .get('/', async ({ headers, query }) => {
-    const tenantId = headers['x-tenant-id'] || 'aspen';
+  .get('/', async ({ headers: _headers, query, adminAuth }) => {
+    if (!adminAuth || (adminAuth.role !== 'admin' && adminAuth.role !== 'super_admin')) {
+      throw new Error('需要管理员权限');
+    }
+    const tenantId = adminAuth.role === 'super_admin' ? (_headers['x-tenant-id'] || 'aspen') : adminAuth.tenantId;
     const page = Number(query.page) || 1;
     const pageSize = Number(query.pageSize) || 20;
     const search = query.search as string | undefined;
@@ -648,16 +664,22 @@ export const adminMemberRoutes = new Elysia({ prefix: '/admin/members' })
   })
 
   // 详情
-  .get('/:id', async ({ headers, params }) => {
-    const tenantId = headers['x-tenant-id'] || 'aspen';
+  .get('/:id', async ({ headers: _headers, params, adminAuth }) => {
+    if (!adminAuth || (adminAuth.role !== 'admin' && adminAuth.role !== 'super_admin')) {
+      throw new Error('需要管理员权限');
+    }
+    const tenantId = adminAuth.role === 'super_admin' ? (_headers['x-tenant-id'] || 'aspen') : adminAuth.tenantId;
     const member = await memberRepo.findById(tenantId, params.id);
     if (!member) throw new Error('会员不存在');
     return { member };
   })
 
   // 创建
-  .post('/', async ({ body, headers }) => {
-    const tenantId = headers['x-tenant-id'] || 'aspen';
+  .post('/', async ({ body, headers: _headers, adminAuth }) => {
+    if (!adminAuth || (adminAuth.role !== 'admin' && adminAuth.role !== 'super_admin')) {
+      throw new Error('需要管理员权限');
+    }
+    const tenantId = adminAuth.role === 'super_admin' ? (_headers['x-tenant-id'] || 'aspen') : adminAuth.tenantId;
     const data = body as any;
 
     const existing = await memberRepo.findByPhone(tenantId, data.phone);
@@ -681,8 +703,11 @@ export const adminMemberRoutes = new Elysia({ prefix: '/admin/members' })
   })
 
   // 更新
-  .patch('/:id', async ({ body, headers, params }) => {
-    const tenantId = headers['x-tenant-id'] || 'aspen';
+  .patch('/:id', async ({ body, headers: _headers, params, adminAuth }) => {
+    if (!adminAuth || (adminAuth.role !== 'admin' && adminAuth.role !== 'super_admin')) {
+      throw new Error('需要管理员权限');
+    }
+    const tenantId = adminAuth.role === 'super_admin' ? (_headers['x-tenant-id'] || 'aspen') : adminAuth.tenantId;
     const member = await memberRepo.findById(tenantId, params.id);
     if (!member) throw new Error('会员不存在');
 
@@ -702,8 +727,11 @@ export const adminMemberRoutes = new Elysia({ prefix: '/admin/members' })
   })
 
   // 删除 (软删除)
-  .delete('/:id', async ({ headers, params }) => {
-    const tenantId = headers['x-tenant-id'] || 'aspen';
+  .delete('/:id', async ({ headers: _headers, params, adminAuth }) => {
+    if (!adminAuth || (adminAuth.role !== 'admin' && adminAuth.role !== 'super_admin')) {
+      throw new Error('需要管理员权限');
+    }
+    const tenantId = adminAuth.role === 'super_admin' ? (_headers['x-tenant-id'] || 'aspen') : adminAuth.tenantId;
     const member = await memberRepo.findById(tenantId, params.id);
     if (!member) throw new Error('会员不存在');
 
@@ -712,8 +740,11 @@ export const adminMemberRoutes = new Elysia({ prefix: '/admin/members' })
   })
 
   // 积分调整
-  .post('/:id/points', async ({ body, headers, params }) => {
-    const tenantId = headers['x-tenant-id'] || 'aspen';
+  .post('/:id/points', async ({ body, headers: _headers, params, adminAuth }) => {
+    if (!adminAuth || (adminAuth.role !== 'admin' && adminAuth.role !== 'super_admin')) {
+      throw new Error('需要管理员权限');
+    }
+    const tenantId = adminAuth.role === 'super_admin' ? (_headers['x-tenant-id'] || 'aspen') : adminAuth.tenantId;
     const member = await memberRepo.findById(tenantId, params.id);
     if (!member) throw new Error('会员不存在');
 

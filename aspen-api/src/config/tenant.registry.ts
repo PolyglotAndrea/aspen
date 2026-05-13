@@ -33,8 +33,7 @@ async function ensureCacheLoaded(): Promise<void> {
   lastLoadTime = Date.now();
 }
 
-// 启动时预加载（非阻塞）
-ensureCacheLoaded().catch(console.error);
+ensureCacheLoaded().catch(() => {});
 
 // ============================================
 // 导出函数（保持向后兼容）
